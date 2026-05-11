@@ -4,7 +4,6 @@
 
 **Course:** INT3306 – Web Application Development, Spring 2026  
 **Team size:** 3  
-**Demo:** May 11–16, 2026
 
 ---
 

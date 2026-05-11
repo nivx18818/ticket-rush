@@ -30,6 +30,7 @@ apps/                — Runnable applications
     public/          — Static assets
 
 packages/            — Shared packages and configs
+  database/          — Prisma schema and generated client
   design-system/     — UI components, styles, and design utilities
     components/
     lib/
