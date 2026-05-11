@@ -1,0 +1,45 @@
+{
+  "name": "ticket-rush",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "lint:web": "pnpm --filter web lint",
+    "lint:api": "pnpm --filter api lint",
+    "check-types": "turbo run check-types",
+    "build": "turbo run build",
+    "build:web": "pnpm --filter web build",
+    "build:api": "pnpm --filter api build",
+    "docker:dev": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.3",
+    "@commitlint/config-conventional": "^20.4.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3",
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "turbo": "^2.9.12",
+    "typescript": "5.9.2"
+  },
+  "packageManager": "pnpm@10.0.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "bcrypt",
+      "prisma",
+      "unrs-resolver"
+    ]
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

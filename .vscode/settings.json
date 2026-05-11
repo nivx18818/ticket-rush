@@ -1,0 +1,35 @@
+{
+  "json.schemaDownload.trustedDomains": {
+    "https://schemastore.azurewebsites.net/": true,
+    "https://raw.githubusercontent.com/microsoft/vscode/": true,
+    "https://raw.githubusercontent.com/devcontainers/spec/": true,
+    "https://www.schemastore.org/": true,
+    "https://json.schemastore.org/": true,
+    "https://json-schema.org/": true,
+    "https://developer.microsoft.com/json-schemas/": true,
+    "https://turborepo.dev/": true,
+    "https://ui.shadcn.com/": true
+  },
+  "js/ts.tsdk.path": "node_modules\\typescript\\lib",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "git.inputValidation": true,
+  "git.inputValidationLength": 100,
+  "git.inputValidationSubjectLength": 100,
+  "files.trimTrailingWhitespace": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "chat.useAgentsMdFile": true,
+  "chat.useNestedAgentsMdFiles": true,
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  }
+}
