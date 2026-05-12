@@ -123,10 +123,11 @@ The system owner and event organizer. Has full control over the platform. Access
 
 #### 4.2.2 Seat Map Configuration
 
-- For each event, define one or more zones (e.g. Zone A, Zone B, VIP).
-- For each zone, declare the seat matrix: number of rows and seats per row.
+- For each event, activate one or more zones by selecting from a fixed set of zone names (see `ZoneName` enum in §9.3).
+- For each activated zone, declare the seat matrix: number of rows and seats per row.
 - Assign a price to each zone (all seats in a zone share one price).
 - The system generates individual seat records from the matrix declaration.
+- The frontend renders each zone at a fixed position on the venue map determined by its name — no coordinate input is required from the Admin.
 
 #### 4.2.3 Real-Time Dashboard
 
@@ -152,7 +153,38 @@ The frontend must reflect seat status changes made by other users without requir
 
 Polling (every 3–5 seconds) is an acceptable fallback if WebSocket implementation becomes a blocker, as the course specification permits either approach.
 
-### 5.2 Database Concurrency — Race Condition Prevention
+### 5.2 Seat Map — Zone Layout
+
+Since TicketRush serves a single organizer with a fixed venue, the visual shape and position of zones on the seat map are hardcoded in the frontend. Each zone name in the `ZoneName` enum maps to a CSS grid area, accent color, and display label:
+
+```ts
+// frontend/src/config/zone-layout.ts
+export const ZONE_LAYOUT: Record<ZoneName, ZoneDisplayConfig> = {
+  VIP: { area: 'vip', color: '#f59e0b', label: 'VIP' },
+  ZONE_A: { area: 'a', color: '#3b82f6', label: 'Zone A' },
+  ZONE_B: { area: 'b', color: '#10b981', label: 'Zone B' },
+  ZONE_C: { area: 'c', color: '#8b5cf6', label: 'Zone C' },
+  STANDING: { area: 'floor', color: '#6b7280', label: 'Standing' },
+  BALCONY_LEFT: { area: 'bal-l', color: '#06b6d4', label: 'Balcony L' },
+  BALCONY_RIGHT: { area: 'bal-r', color: '#06b6d4', label: 'Balcony R' },
+};
+```
+
+The venue CSS grid defines the overall spatial layout:
+
+```css
+.venue-map {
+  display: grid;
+  grid-template-areas:
+    '  .    vip    vip    vip     .   '
+    'bal-l   a      b      c    bal-r '
+    'bal-l  floor  floor  floor bal-r';
+}
+```
+
+Only zones activated by the Admin for a given event are rendered; unused grid areas remain empty. This approach gives a realistic spatial seat map without requiring coordinate input from the Admin.
+
+### 5.3 Database Concurrency — Race Condition Prevention
 
 This is the core correctness requirement. When two users click the same seat simultaneously, exactly one must succeed.
 
@@ -172,7 +204,7 @@ COMMIT;
 
 The first transaction acquires the row lock and updates the seat. The second transaction waits, then reads the updated row, finds `status = 'locked'`, and returns an error to the second user. No seat is ever double-booked.
 
-### 5.3 Ticket Lifecycle
+### 5.4 Ticket Lifecycle
 
 Seats transition through the following states:
 
@@ -196,7 +228,7 @@ After the update, the server emits a `seat:updated` WebSocket event for each rel
 
 **Payment:** No real payment gateway. The checkout "Confirm" button calls `POST /orders/:id/confirm`, which flips all locked seats to `sold` and generates QR ticket records.
 
-### 5.4 Virtual Queue _(Advanced — Future Implementation)_
+### 5.5 Virtual Queue _(Advanced — Future Implementation)_
 
 > **Status:** Designed but not implemented in the current sprint. The architecture below is documented for future work and aligns with the course's advanced challenge (§4.4 of the spec).
 
@@ -395,11 +427,27 @@ CronService.releaseExpiredSeats()
 
 ### 9.3 zones
 
+Zone names are drawn from a fixed enum. The frontend uses each name to look up a hardcoded display config (grid area, color, label) — this is what gives the seat map its spatial shape without requiring coordinate input from the Admin.
+
+**`ZoneName` enum:**
+
+| Value         | Grid area | Display label |
+| ------------- | --------- | ------------- |
+| VIP           | vip       | VIP           |
+| ZONE_A        | a         | Zone A        |
+| ZONE_B        | b         | Zone B        |
+| ZONE_C        | c         | Zone C        |
+| STANDING      | floor     | Standing      |
+| BALCONY_LEFT  | bal-l     | Balcony L     |
+| BALCONY_RIGHT | bal-r     | Balcony R     |
+
+**zones table:**
+
 | Column        | Type             | Notes                              |
 | ------------- | ---------------- | ---------------------------------- |
 | id            | uuid PK          |                                    |
 | event_id      | uuid FK → events |                                    |
-| name          | varchar          | e.g. "Zone A", "VIP"               |
+| name          | enum(ZoneName)   | drives frontend layout             |
 | rows          | int              | seat matrix row count              |
 | seats_per_row | int              | seat matrix column count           |
 | price         | numeric          | all seats in zone share this price |
