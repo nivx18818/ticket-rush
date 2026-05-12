@@ -1,0 +1,49 @@
+enum UserRole {
+  CUSTOMER @map("customer")
+  ADMIN    @map("admin")
+
+  @@map("user_role")
+}
+
+enum UserGender {
+  MALE   @map("male")
+  FEMALE @map("female")
+  OTHER  @map("other")
+
+  @@map("user_gender")
+}
+
+enum EventStatus {
+  DRAFT     @map("draft")
+  PUBLISHED @map("published")
+
+  @@map("event_status")
+}
+
+enum ZoneName {
+  VIP
+  ZONE_A
+  ZONE_B
+  ZONE_C
+  STANDING
+  BALCONY_LEFT
+  BALCONY_RIGHT
+
+  @@map("zone_name")
+}
+
+enum SeatStatus {
+  AVAILABLE @map("available")
+  LOCKED    @map("locked")
+  SOLD      @map("sold")
+
+  @@map("seat_status")
+}
+
+enum OrderStatus {
+  PENDING   @map("pending")
+  CONFIRMED @map("confirmed")
+  EXPIRED   @map("expired")
+
+  @@map("order_status")
+}

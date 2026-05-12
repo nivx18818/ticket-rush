@@ -1,0 +1,53 @@
+model Event {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String      @db.VarChar(255)
+  description  String      @db.Text
+  eventDate    DateTime    @map("event_date") @db.Timestamptz(6)
+  venue        String      @db.VarChar(255)
+  thumbnailUrl String      @map("thumbnail_url") @db.VarChar(2048)
+  status       EventStatus @default(DRAFT)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  zones  Zone[]
+  orders Order[]
+
+  @@index([name])
+  @@index([status])
+  @@index([eventDate])
+  @@map("events")
+}
+
+model Zone {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId     String  @map("event_id") @db.Uuid
+  name        ZoneName
+  rows        Int
+  seatsPerRow Int     @map("seats_per_row")
+  price       Decimal @db.Decimal(10, 2)
+
+  event Event  @relation(fields: [eventId], references: [id])
+  seats Seat[]
+
+  @@unique([eventId, name])
+  @@index([eventId])
+  @@map("zones")
+}
+
+model Seat {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  zoneId      String     @map("zone_id") @db.Uuid
+  rowLabel    String     @map("row_label") @db.VarChar(8)
+  seatNumber  Int        @map("seat_number")
+  status      SeatStatus @default(AVAILABLE)
+  lockedById  String?    @map("locked_by") @db.Uuid
+  lockedUntil DateTime?  @map("locked_until") @db.Timestamptz(6)
+
+  zone     Zone    @relation(fields: [zoneId], references: [id])
+  lockedBy User?   @relation("SeatLock", fields: [lockedById], references: [id])
+  ticket   Ticket?
+
+  @@unique([zoneId, rowLabel, seatNumber])
+  @@index([zoneId])
+  @@index([status, lockedUntil])
+  @@map("seats")
+}
