@@ -4,6 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 
 import { PrismaClient } from '../generated/prisma/client';
+import type { ZoneName, EventStatus } from '../generated/prisma/enums';
 
 const pool = new pg.Pool({ connectionString: process.env.DIRECT_URL });
 const adapter = new PrismaPg(pool);
@@ -14,7 +15,24 @@ const DEFAULT_ADMIN_NAME = 'TicketRush Admin';
 const DEFAULT_ADMIN_PASSWORD = 'admin@ticketrush';
 const DEFAULT_ADMIN_DOB = new Date('2000-01-01');
 
-const SAMPLE_EVENTS = [
+type SampleZone = {
+  name: ZoneName;
+  rows: number;
+  seatsPerRow: number;
+  price: number;
+};
+
+type SampleEvent = {
+  name: string;
+  description: string;
+  eventDate: Date;
+  venue: string;
+  thumbnailUrl: string;
+  status: EventStatus;
+  zones: SampleZone[];
+};
+
+const SAMPLE_EVENTS: SampleEvent[] = [
   {
     name: 'Neon Skyline Fest',
     description: 'An open-air lineup of synthwave and indie-pop artists.',
