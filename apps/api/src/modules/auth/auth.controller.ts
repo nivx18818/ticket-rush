@@ -1,55 +1,97 @@
-import type { CookieOptions, Response } from 'express';
+import type { Request, Response } from 'express';
 
-import { Body, Controller, Get, Post, Res } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 
 import type { UserProfileDto } from '../users/dto/users.dto';
 import type { AuthenticatedRequestUser } from './type/auth.types';
 
-import { AUTH_COOKIE_NAME, JWT_COOKIE_MAX_AGE_MS } from '../../common/constants/auth.constants';
+import {
+  ACCESS_TOKEN_COOKIE_OPTIONS,
+  CLEAR_COOKIE_OPTIONS,
+  COOKIE_NAMES,
+  REFRESH_TOKEN_CLEAR_COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
+} from '../../common/constants/cookie-config';
 import { Public } from '../../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { RefreshTokenService } from './refresh-token.service';
+import { cookieExtractor } from './utils/cookie-extractor';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly configService: ConfigService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   @Public()
   @Post('register')
-  async register(
-    @Body() dto: RegisterDto,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<{ user: UserProfileDto }> {
-    const { accessToken, user } = await this.authService.register(dto);
-    this.setAuthCookie(response, accessToken);
-
-    return { user };
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() dto: RegisterDto): Promise<UserProfileDto> {
+    return this.authService.register(dto);
   }
 
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<{ user: UserProfileDto }> {
-    const { accessToken, user } = await this.authService.login(dto);
+  ): Promise<{ message: string }> {
+    const { accessToken, refreshToken } = await this.authService.login(dto);
     this.setAuthCookie(response, accessToken);
+    this.setRefreshTokenCookie(response, refreshToken);
 
-    return { user };
+    return { message: 'Login successful' };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ message: string }> {
+    await this.authService.logout(user.id);
+    response.clearCookie(COOKIE_NAMES.ACCESS_TOKEN, CLEAR_COOKIE_OPTIONS);
+    response.clearCookie(COOKIE_NAMES.REFRESH_TOKEN, REFRESH_TOKEN_CLEAR_COOKIE_OPTIONS);
+
+    return { message: 'Logged out successfully' };
   }
 
   @Public()
-  @Post('logout')
-  logout(@Res({ passthrough: true }) response: Response): { success: true } {
-    response.clearCookie(AUTH_COOKIE_NAME, this.getClearCookieOptions());
+  @UseGuards(JwtRefreshGuard)
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Req() request: Request,
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ message: string }> {
+    const oldRefreshToken = cookieExtractor('REFRESH_TOKEN')(request);
 
-    return { success: true };
+    if (oldRefreshToken) {
+      await this.refreshTokenService.revokeByToken(oldRefreshToken);
+    }
+
+    const { accessToken, refreshToken } = await this.authService.refresh(user);
+    this.setAuthCookie(response, accessToken);
+    this.setRefreshTokenCookie(response, refreshToken);
+
+    return { message: 'Token refreshed' };
   }
 
   @Get('me')
@@ -57,23 +99,11 @@ export class AuthController {
     return { user };
   }
 
-  private getCookieOptions(): CookieOptions {
-    return {
-      httpOnly: true,
-      maxAge: JWT_COOKIE_MAX_AGE_MS,
-      path: '/',
-      sameSite: 'lax',
-      secure: this.configService.get<string>('NODE_ENV') === 'production',
-    };
-  }
-
-  private getClearCookieOptions(): CookieOptions {
-    const { maxAge: _maxAge, ...options } = this.getCookieOptions();
-
-    return options;
-  }
-
   private setAuthCookie(response: Response, accessToken: string) {
-    response.cookie(AUTH_COOKIE_NAME, accessToken, this.getCookieOptions());
+    response.cookie(COOKIE_NAMES.ACCESS_TOKEN, accessToken, ACCESS_TOKEN_COOKIE_OPTIONS);
+  }
+
+  private setRefreshTokenCookie(response: Response, refreshToken: string) {
+    response.cookie(COOKIE_NAMES.REFRESH_TOKEN, refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
   }
 }

@@ -1,7 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma, UserRole } from '@repo/db/prisma/client';
 
-import { EmailAlreadyExistsException } from '@/common/exceptions/app.exceptions';
+import {
+  EmailAlreadyExistsException,
+  UserNotFoundException,
+} from '@/common/exceptions/app.exceptions';
 
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { UserProfileDto, UserWithPasswordHashDto } from './dto/users.dto';
@@ -79,7 +82,7 @@ export class UsersService {
     const user = await this.findById(id);
 
     if (!user) {
-      throw new NotFoundException('User not found.');
+      throw new UserNotFoundException(id);
     }
 
     return user;

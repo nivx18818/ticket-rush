@@ -1,12 +1,13 @@
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
 import type { AuthenticatedRequestUser } from '../type/auth.types';
 
 import { IS_PUBLIC_KEY } from '../../../common/decorators/public.decorator';
+import { MissingAuthenticationException } from '../../../common/exceptions/app.exceptions';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
@@ -33,7 +34,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {
     }
 
     if (!user) {
-      throw new UnauthorizedException('Authentication cookie is missing or invalid.');
+      throw new MissingAuthenticationException();
     }
 
     return user;

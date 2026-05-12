@@ -5,6 +5,7 @@
     "DATABASE_URL",
     "DIRECT_URL",
     "CLIENT_URL",
+    "COOKIE_DOMAIN",
     "PORT",
     "NODE_ENV",
     "JWT_SECRET",
