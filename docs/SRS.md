@@ -34,14 +34,14 @@ TicketRush is a web application allowing a single event organizer (Admin) to pub
 
 ### 1.3 Definitions
 
-| Term          | Meaning                                                              |
-| ------------- | -------------------------------------------------------------------- |
-| Seat matrix   | A grid declared by Admin (e.g. Zone A: 10 rows × 15 seats)           |
-| Lock          | A temporary reservation placed on a seat while a customer checks out |
-| Release       | Expiry of a lock; seat returns to Available                          |
-| Flash sale    | A ticket sale opened simultaneously to a large number of users       |
-| Virtual queue | A waiting room that throttles user access during traffic spikes      |
-| QR ticket     | A unique QR code issued to a customer upon successful purchase       |
+| Term          | Meaning                                                                         |
+| ------------- | ------------------------------------------------------------------------------- |
+| Seat matrix   | A grid declared by Admin (e.g. Zone A: 10 rows × 15 seats)                      |
+| Lock          | A temporary reservation placed on a seat while a customer checks out            |
+| Release       | Expiry of a lock; seat returns to Available                                     |
+| Flash sale    | A ticket sale opened simultaneously to a large number of users                  |
+| Virtual queue | A waiting room that throttles user access to the seat map during traffic spikes |
+| QR ticket     | A unique QR code issued to a customer upon successful purchase                  |
 
 ### 1.4 Out of Scope
 
@@ -49,6 +49,7 @@ TicketRush is a web application allowing a single event organizer (Admin) to pub
 - Email or SMS notifications
 - Multi-organizer / multi-tenant support
 - Mobile native applications
+- Virtual queue / waiting room — designed and documented (§5.4) but **not implemented in the current sprint**; reserved for future work
 
 ---
 
@@ -183,21 +184,31 @@ Available ──[customer holds]──► Locked ──[customer confirms]──
                                 Released (= Available)
 ```
 
-**Auto-release implementation:** A BullMQ delayed job is enqueued at lock time with a 10-minute delay. When the job fires, the worker checks: if the seat is still `locked` and unpaid, it sets `status = 'available'` and emits a `seat:updated` WebSocket event so all connected clients see the seat turn green again.
+**Auto-release implementation:** A `node-cron` job runs every minute on the NestJS server. Each tick executes a single UPDATE query to bulk-release all expired locks:
 
-**Payment:** No real payment gateway. The checkout "Confirm" button calls `POST /orders/:id/confirm`, which flips all locked seats to `sold`, generates QR ticket records, and cancels the pending release jobs.
+```sql
+UPDATE seats
+SET status = 'available', locked_by = NULL, locked_until = NULL
+WHERE status = 'locked' AND locked_until < NOW()
+```
 
-### 5.4 Virtual Queue (Advanced Feature)
+After the update, the server emits a `seat:updated` WebSocket event for each released seat so connected clients see the seats turn green.
 
-When concurrent seat-lock requests exceed a configurable threshold, the system activates a waiting room instead of letting all requests hit the database simultaneously.
+**Payment:** No real payment gateway. The checkout "Confirm" button calls `POST /orders/:id/confirm`, which flips all locked seats to `sold` and generates QR ticket records.
+
+### 5.4 Virtual Queue _(Advanced — Future Implementation)_
+
+> **Status:** Designed but not implemented in the current sprint. The architecture below is documented for future work and aligns with the course's advanced challenge (§4.4 of the spec).
+
+When concurrent seat-lock requests exceed a configurable threshold, the system redirects users into a waiting room instead of letting all requests hit the database simultaneously.
 
 **Flow:**
 
 1. On flash-sale open, incoming users are redirected to `/queue` if the active session count exceeds the threshold.
 2. Each user is assigned a position stored in a Redis sorted set (score = arrival timestamp).
 3. The queue page displays: _"You are #105 in the queue. Please do not refresh."_
-4. A server-side scheduler (BullMQ repeatable job) runs every few seconds and dequeues the next batch of N users (e.g. 50), issuing each a signed access token (JWT with short expiry).
-5. Clients poll a `/queue/status` endpoint. When their token is issued, they are redirected to the seat map with the token as a query param.
+4. A server-side scheduler (repeatable cron job) runs every few seconds, dequeuing the next batch of N users (e.g. 50) and issuing each a short-lived signed token.
+5. Clients poll `/queue/status`. When their token is ready, they are redirected to the seat map.
 6. The seat map route validates the token before granting access.
 
 **Redis data structure:**
@@ -207,6 +218,8 @@ ZADD queue:{eventId}  <timestamp>  <userId>   // enqueue
 ZRANGE queue:{eventId} 0 49 WITHSCORES        // dequeue next 50
 ZRANK queue:{eventId} <userId>                // get position
 ```
+
+**Additional dependencies required when implemented:** Redis 7, `ioredis`.
 
 ---
 
@@ -219,8 +232,8 @@ Only those relevant to a course project demo are listed.
 | NFR-1 | Correctness under concurrency | Zero double-bookings under concurrent load (verifiable with a simple script sending simultaneous requests) |
 | NFR-2 | Seat status update latency    | Seat turns grey on other clients within 2 seconds of a lock                                                |
 | NFR-3 | Lock expiry accuracy          | Seats released within 30 seconds of the 10-minute deadline                                                 |
-| NFR-4 | Auth security                 | Passwords hashed with bcrypt; JWT used for session                                                         |
-| NFR-5 | Dev environment               | Single `docker compose up` starts all services                                                             |
+| NFR-4 | Auth security                 | Passwords hashed with bcrypt; JWT stored in `httpOnly` cookie                                              |
+| NFR-5 | Dev environment               | Single `docker compose up` starts frontend and backend; database is cloud-hosted                           |
 
 ---
 
@@ -228,17 +241,17 @@ Only those relevant to a course project demo are listed.
 
 ### 7.1 Summary
 
-| Layer               | Technology                             | Reason                                                                              |
-| ------------------- | -------------------------------------- | ----------------------------------------------------------------------------------- |
-| Frontend            | Next.js 14 (App Router)                | React-based, file-based routing, same language as backend                           |
-| Backend             | NestJS (Node.js)                       | Enforced structure for team collaboration; first-class Socket.io and BullMQ modules |
-| Database            | PostgreSQL 16                          | Row-level locking (`SELECT FOR UPDATE`) — mandatory for correctness requirement     |
-| Cache & Queue store | Redis 7                                | Backs BullMQ job queues and virtual queue sorted sets                               |
-| Background jobs     | BullMQ via `@nestjs/bull`              | Delayed seat-release jobs; repeatable queue-drain jobs                              |
-| Real-time           | Socket.io via `@nestjs/websockets`     | Seat map sync and admin dashboard push                                              |
-| Auth                | JWT via `@nestjs/jwt` + `passport-jwt` | Stateless, simple to implement                                                      |
-| QR generation       | `qrcode` (npm)                         | Server-side QR PNG generation, no external service                                  |
-| Containerisation    | Docker + Docker Compose                | Uniform dev environment across all team members                                     |
+| Layer            | Technology                              | Reason                                                                       |
+| ---------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| Frontend         | Next.js 16 (App Router)                 | React-based, file-based routing, same language as backend                    |
+| Backend          | NestJS (Node.js)                        | Enforced structure for team collaboration; first-class Socket.io module      |
+| Database         | Prisma Postgres (cloud)                 | Managed cloud database; no local DB service needed                           |
+| ORM              | Prisma                                  | Type-safe queries, schema-as-code, supports raw SQL escape hatch for locking |
+| Background jobs  | node-cron                               | Lightweight cron scheduler for periodic seat-release sweeps                  |
+| Real-time        | Socket.io via `@nestjs/websockets`      | Seat map sync and admin dashboard push                                       |
+| Auth             | JWT (`@nestjs/jwt`) + `httpOnly` cookie | Stateless session; cookie avoids manual token handling on the client         |
+| QR generation    | `qrcode` (npm)                          | Server-side QR PNG generation, no external service                           |
+| Containerisation | Docker + Docker Compose                 | Uniform dev environment across all team members                              |
 
 ### 7.2 Next.js (Frontend)
 
@@ -248,43 +261,65 @@ Next.js API Routes are **not** used for backend logic — all business logic liv
 
 ### 7.3 NestJS (Backend)
 
-Modules align with the domain:
+NestJS best practices place feature modules under `src/modules/`. Each module is self-contained (controller, service, and any guards or DTOs it owns):
 
 ```
 src/
-  auth/          ← JWT strategy, guards, register/login endpoints
-  users/         ← customer profile, analytics data
-  events/        ← event CRUD, publish/unpublish
-  seats/         ← seat matrix generation, lock/release/sell logic
-  orders/        ← checkout, confirm, QR ticket issuance
-  queue/         ← virtual queue management
-  dashboard/     ← real-time stats aggregation
-  workers/       ← BullMQ processors (seat release, queue drain)
-  gateway/       ← Socket.io WebSocket gateway
+  app.module.ts          ← root module, imports all feature modules
+  main.ts                ← bootstrap, cookie-parser middleware, Socket.io adapter
+  modules/
+    auth/                ← cookie-based JWT, guards, register/login/logout
+    users/               ← customer profile, analytics data
+    events/              ← event CRUD, publish/unpublish
+    seats/               ← seat matrix generation, lock/release/sell logic
+    orders/              ← checkout, confirm, QR ticket issuance
+    dashboard/           ← real-time stats aggregation
+    cron/                ← node-cron job: periodic expired-lock sweep
+    gateway/             ← Socket.io WebSocket gateway
 ```
 
-### 7.4 PostgreSQL
+### 7.4 Prisma Postgres (Cloud) + Prisma ORM
 
-All persistent data lives here. Row-level locking is used for the seat-hold transaction. No ORM — queries are written with `pg` (node-postgres) directly to keep SQL transparent and avoid ORM magic hiding the locking behaviour.
+The database is hosted on Prisma's managed cloud platform — no local PostgreSQL container is needed. The connection string is stored in an environment variable (`DATABASE_URL`) and Prisma Client connects to the cloud instance from the NestJS backend at runtime.
 
-### 7.5 Redis
+The seat-hold transaction requires a raw SQL escape hatch because Prisma Client does not expose `SELECT FOR UPDATE` through its fluent API. This is handled with `prisma.$transaction` combined with `prisma.$queryRaw`:
 
-- BullMQ uses Redis as its job store (delayed jobs for seat release, repeatable job for queue drain).
-- Virtual queue positions stored as a sorted set per event.
-- No general-purpose caching needed beyond these two uses.
+```typescript
+await prisma.$transaction(async (tx) => {
+  // Raw SQL for row-level lock
+  const [seat] = await tx.$queryRaw<Seat[]>`
+    SELECT * FROM seats
+    WHERE id = ${seatId} AND status = 'available'
+    FOR UPDATE
+  `;
 
-### 7.6 Docker Compose
+  if (!seat) throw new ConflictException('Seat is no longer available');
 
-Five services:
+  // Prisma Client for the update — still inside the same transaction
+  await tx.seat.update({
+    where: { id: seatId },
+    data: {
+      status: 'locked',
+      lockedBy: userId,
+      lockedUntil: new Date(Date.now() + 10 * 60 * 1000),
+    },
+  });
+});
+```
+
+All other service methods use the standard Prisma Client API.
+
+### 7.5 Docker Compose
+
+Two services (database is external):
 
 ```yaml
 services:
   frontend: # Next.js dev server, port 3000
-  backend: # NestJS, port 4000
-  worker: # BullMQ processors (same NestJS codebase, different entry point)
-  postgres: # PostgreSQL 16
-  redis: # Redis 7
+  backend: # NestJS (includes cron scheduler), port 4000
 ```
+
+`DATABASE_URL` is passed as an environment variable pointing to the Prisma cloud database.
 
 ---
 
@@ -296,7 +331,7 @@ services:
 Customer clicks seat
        │
        ▼
-Next.js → POST /seats/:id/lock  (with JWT)
+Next.js → POST /seats/lock  (cookie sent automatically)
        │
        ▼
 NestJS SeatsController
@@ -308,7 +343,6 @@ SeatsService.lockSeat()
   ├─ Check status = 'available'
   ├─ UPDATE status = 'locked', locked_until = now + 10min
   ├─ COMMIT
-  ├─ Enqueue BullMQ delayed job (10 min)
   └─ Emit socket event  seat:updated → all clients on this event
        │
        ▼
@@ -319,36 +353,14 @@ Other clients' seats turn grey within seconds
 ### 8.2 Request Flow — Auto Release
 
 ```
-BullMQ delayed job fires after 10 min
+node-cron fires every 60 seconds
        │
        ▼
-SeatReleaseProcessor.process()
-  ├─ SELECT seat WHERE id = ? AND status = 'locked'
-  ├─ If still locked → UPDATE status = 'available'
-  └─ Emit seat:updated → all clients
-```
-
-### 8.3 Request Flow — Virtual Queue
-
-```
-Flash sale opens, traffic spike detected
-       │
-       ▼
-QueueGuard on GET /events/:id/seats
-  ├─ Count active sessions for event
-  ├─ If below threshold → pass through
-  └─ If above threshold → redirect to /queue?event=:id
-       │
-       ▼
-Client assigned position in Redis sorted set
-Client polls GET /queue/status every 3 sec
-       │
-       ▼
-QueueDrainJob (repeatable, every 5 sec)
-  └─ ZRANGE next 50 users → issue each a short-lived JWT
-       │
-       ▼
-Client receives token → redirect to seat map
+CronService.releaseExpiredSeats()
+  ├─ UPDATE seats SET status = 'available', locked_by = NULL, locked_until = NULL
+  │    WHERE status = 'locked' AND locked_until < NOW()
+  │    RETURNING id
+  └─ For each released seat → Emit seat:updated → all clients
 ```
 
 ---
@@ -429,14 +441,15 @@ Client receives token → redirect to seat map
 
 ## 10. API Overview
 
-All endpoints are prefixed `/api`. Auth-required endpoints need `Authorization: Bearer <token>`.
+All endpoints are prefixed `/api/v1`. Authentication is cookie-based — the JWT is set as an `httpOnly` cookie on login and cleared on logout. Protected endpoints read the token from the cookie automatically; no manual `Authorization` header is needed.
 
 ### Auth
 
-| Method | Path           | Auth | Description           |
-| ------ | -------------- | ---- | --------------------- |
-| POST   | /auth/register | None | Customer registration |
-| POST   | /auth/login    | None | Returns JWT           |
+| Method | Path           | Auth | Description                                       |
+| ------ | -------------- | ---- | ------------------------------------------------- |
+| POST   | /auth/register | None | Customer registration                             |
+| POST   | /auth/login    | None | Validates credentials, sets `httpOnly` JWT cookie |
+| POST   | /auth/logout   | None | Clears the JWT cookie                             |
 
 ### Events
 
@@ -478,13 +491,6 @@ All endpoints are prefixed `/api`. Auth-required endpoints need `Authorization: 
 | ------ | ------------------------------- | ----- | ---------------------------- |
 | GET    | /dashboard/events/:id           | Admin | Revenue + occupancy snapshot |
 | GET    | /dashboard/events/:id/analytics | Admin | Age + gender breakdown       |
-
-### Queue
-
-| Method | Path          | Auth     | Description                     |
-| ------ | ------------- | -------- | ------------------------------- |
-| POST   | /queue/join   | Customer | Join virtual queue for an event |
-| GET    | /queue/status | Customer | Poll position + token readiness |
 
 ### WebSocket Events (Socket.io)
 
