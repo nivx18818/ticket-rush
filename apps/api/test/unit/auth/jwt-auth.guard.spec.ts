@@ -1,7 +1,8 @@
-import { UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { UserGender, UserRole } from '@repo/db/prisma/client';
+
+import { MissingAuthenticationException } from '@/common/exceptions/app.exceptions';
 
 import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
 
@@ -58,6 +59,6 @@ describe('JwtAuthGuard', () => {
   });
 
   it('rejects requests when passport does not provide a user', () => {
-    expect(() => guard.handleRequest(null, null)).toThrow(UnauthorizedException);
+    expect(() => guard.handleRequest(null, null)).toThrow(MissingAuthenticationException);
   });
 });

@@ -8,7 +8,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
 import { AppModule } from '../../src/app.module';
-import { AUTH_COOKIE_NAME } from '../../src/common/constants/auth.constants';
+import { COOKIE_NAMES } from '../../src/common/constants/cookie-config';
 import { PrismaService } from '../../src/modules/prisma/prisma.service';
 
 type DbUser = {
@@ -32,12 +32,14 @@ type UserWhere = {
 };
 
 type AuthResponseBody = {
-  user: {
-    email: string;
-    name?: string;
-    passwordHash?: string;
-    role: string;
-  };
+  email: string;
+  name?: string;
+  passwordHash?: string;
+  role: string;
+};
+
+type ProfileResponseBody = {
+  user: AuthResponseBody;
 };
 
 class DuplicateEmailError extends Error {
@@ -56,16 +58,33 @@ const toSelectedUser = (user: DbUser, select: UserSelect) => {
 
 describe('Auth flows (e2e)', () => {
   let app: INestApplication<App>;
+  let refreshTokens: unknown[];
   let users: DbUser[];
 
   beforeAll(() => {
     process.env.JWT_SECRET = 'test-jwt-secret-with-enough-entropy';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-jwt-secret-with-enough-entropy';
+    process.env.JWT_REFRESH_TOKEN_HASH_SECRET = 'test-refresh-token-hash-secret';
   });
 
   beforeEach(async () => {
+    refreshTokens = [];
     users = [];
 
     const prisma = {
+      refreshToken: {
+        create: jest.fn((args: { data: unknown }) => {
+          const token = {
+            ...(args.data as object),
+            id: `refresh-token-${refreshTokens.length + 1}`,
+          };
+          refreshTokens.push(token);
+
+          return Promise.resolve(token);
+        }),
+        deleteMany: jest.fn(() => Promise.resolve({ count: 1 })),
+        findFirst: jest.fn(() => Promise.resolve(refreshTokens[0] ?? null)),
+      },
       user: {
         create: jest.fn((args: { data: Omit<DbUser, 'createdAt' | 'id'>; select: UserSelect }) => {
           if (users.some((user) => user.email === args.data.email)) {
@@ -118,7 +137,7 @@ describe('Auth flows (e2e)', () => {
     await app.close();
   });
 
-  it('registers, reads profile, logs in, and logs out using an httpOnly cookie', async () => {
+  it('registers, logs in, reads profile, and logs out using httpOnly cookies', async () => {
     const registerResponse = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({
@@ -130,24 +149,36 @@ describe('Auth flows (e2e)', () => {
       })
       .expect(201);
 
-    const registerCookie = registerResponse.headers['set-cookie'] as string[];
     const registerBody = registerResponse.body as AuthResponseBody;
 
-    expect(registerCookie[0]).toContain(`${AUTH_COOKIE_NAME}=`);
-    expect(registerCookie[0]).toContain('HttpOnly');
-    expect(registerBody.user).toMatchObject({
+    expect(registerResponse.headers['set-cookie']).toBeUndefined();
+    expect(registerBody).toMatchObject({
       email: 'user@example.com',
       name: 'Test User',
       role: 'CUSTOMER',
     });
-    expect(registerBody.user).not.toHaveProperty('passwordHash');
+    expect(registerBody).not.toHaveProperty('passwordHash');
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: 'user@example.com', password: 'Password1' })
+      .expect(200)
+      .expect(({ headers }) => {
+        const loginCookie = headers['set-cookie'] as string[];
+        expect(loginCookie[0]).toContain(`${COOKIE_NAMES.ACCESS_TOKEN}=`);
+        expect(loginCookie[0]).toContain('HttpOnly');
+        expect(loginCookie[1]).toContain(`${COOKIE_NAMES.REFRESH_TOKEN}=`);
+        expect(loginCookie[1]).toContain('HttpOnly');
+      });
+
+    const loginCookie = loginResponse.headers['set-cookie'] as string[];
 
     await request(app.getHttpServer())
       .get('/api/v1/auth/me')
-      .set('Cookie', registerCookie)
+      .set('Cookie', loginCookie)
       .expect(200)
       .expect((response) => {
-        const body = response.body as AuthResponseBody;
+        const body = response.body as ProfileResponseBody;
 
         expect(body.user).toMatchObject({
           email: 'user@example.com',
@@ -155,27 +186,32 @@ describe('Auth flows (e2e)', () => {
         });
       });
 
-    await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email: 'user@example.com', password: 'Password1' })
-      .expect(201)
+    const refreshResponse = await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', loginCookie)
+      .expect(200)
       .expect(({ headers }) => {
-        const loginCookie = headers['set-cookie'] as string[];
-        expect(loginCookie[0]).toContain(`${AUTH_COOKIE_NAME}=`);
-        expect(loginCookie[0]).toContain('HttpOnly');
+        const refreshCookie = headers['set-cookie'] as string[];
+        expect(refreshCookie[0]).toContain(`${COOKIE_NAMES.ACCESS_TOKEN}=`);
+        expect(refreshCookie[0]).toContain('HttpOnly');
+        expect(refreshCookie[1]).toContain(`${COOKIE_NAMES.REFRESH_TOKEN}=`);
+        expect(refreshCookie[1]).toContain('HttpOnly');
       });
+
+    const refreshedCookie = refreshResponse.headers['set-cookie'] as string[];
 
     await request(app.getHttpServer())
       .post('/api/v1/auth/logout')
-      .expect(201)
+      .set('Cookie', refreshedCookie)
+      .expect(200)
       .expect(({ headers }) => {
         const logoutCookie = headers['set-cookie'] as string[];
-        expect(logoutCookie[0]).toContain(`${AUTH_COOKIE_NAME}=;`);
+        expect(logoutCookie[0]).toContain(`${COOKIE_NAMES.ACCESS_TOKEN}=;`);
       });
   });
 
   it('protects admin-only endpoints from customer users', async () => {
-    const registerResponse = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({
         email: 'customer@example.com',
@@ -186,9 +222,14 @@ describe('Auth flows (e2e)', () => {
       })
       .expect(201);
 
+    const loginResponse = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: 'customer@example.com', password: 'Password1' })
+      .expect(200);
+
     await request(app.getHttpServer())
       .get('/api/v1/admin/users')
-      .set('Cookie', registerResponse.headers['set-cookie'] as string[])
+      .set('Cookie', loginResponse.headers['set-cookie'] as string[])
       .expect(403);
   });
 });

@@ -1,8 +1,10 @@
-import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Prisma, UserGender, UserRole } from '@repo/db/prisma/client';
 
-import { EmailAlreadyExistsException } from '@/common/exceptions/app.exceptions';
+import {
+  EmailAlreadyExistsException,
+  UserNotFoundException,
+} from '@/common/exceptions/app.exceptions';
 
 import { PrismaService } from '../../../src/modules/prisma/prisma.service';
 import { UsersService } from '../../../src/modules/users/users.service';
@@ -90,6 +92,6 @@ describe('UsersService', () => {
   it('throws when a requested user is missing', async () => {
     prisma.user.findUnique.mockResolvedValue(null);
 
-    await expect(service.getByIdOrThrow(user.id)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.getByIdOrThrow(user.id)).rejects.toBeInstanceOf(UserNotFoundException);
   });
 });
