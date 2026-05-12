@@ -2,8 +2,13 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
-  "testMatch": ["<rootDir>/test/e2e/**/*.e2e-spec.ts"],
+  "testMatch": ["<rootDir>/e2e/**/*.e2e-spec.ts"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/../src/$1",
+    "^@repo/db/prisma/client$": "<rootDir>/utils/prisma-client.mock.ts",
+    "^@repo/db/prisma/internal/prismaNamespace$": "<rootDir>/utils/prisma-namespace.mock.ts"
   }
 }

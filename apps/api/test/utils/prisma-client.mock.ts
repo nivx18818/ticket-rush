@@ -10,3 +10,18 @@ export class PrismaClient {
 export const Prisma = {
   PrismaClientKnownRequestError,
 };
+
+export const UserGender = {
+  FEMALE: 'FEMALE',
+  MALE: 'MALE',
+  OTHER: 'OTHER',
+} as const;
+
+export type UserGender = (typeof UserGender)[keyof typeof UserGender];
+
+export const UserRole = {
+  ADMIN: 'ADMIN',
+  CUSTOMER: 'CUSTOMER',
+} as const;
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
