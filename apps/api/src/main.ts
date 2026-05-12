@@ -1,12 +1,18 @@
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module';
 
+function normalizeOrigin(origin: string) {
+  return origin.replace(/\/$/, '');
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   app.use(cookieParser());
 
@@ -14,7 +20,7 @@ async function bootstrap() {
 
   app.enableCors({
     credentials: true,
-    origin: process.env.CLIENT_URL,
+    origin: normalizeOrigin(configService.getOrThrow<string>('CLIENT_URL')),
   });
 
   app.useGlobalPipes(
@@ -25,7 +31,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(Number(configService.get<string>('PORT') ?? 3001));
 }
 
 void bootstrap();
