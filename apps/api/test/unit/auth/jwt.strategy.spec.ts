@@ -1,7 +1,8 @@
-import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { UserGender, UserRole } from '@repo/db/prisma/client';
+
+import { InvalidTokenException } from '@/common/exceptions/app.exceptions';
 
 import { JwtStrategy } from '../../../src/modules/auth/strategies/jwt.strategy';
 import { UsersService } from '../../../src/modules/users/users.service';
@@ -62,6 +63,6 @@ describe('JwtStrategy', () => {
 
     await expect(
       strategy.validate({ sub: user.id, email: user.email, role: user.role }),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(InvalidTokenException);
   });
 });

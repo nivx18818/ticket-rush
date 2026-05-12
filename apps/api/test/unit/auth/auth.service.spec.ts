@@ -1,10 +1,13 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { UserGender, UserRole } from '@repo/db/prisma/client';
 import * as bcrypt from 'bcrypt';
 
+import { InvalidCredentialsException } from '@/common/exceptions/app.exceptions';
+
 import { AuthService } from '../../../src/modules/auth/auth.service';
+import { RefreshTokenService } from '../../../src/modules/auth/refresh-token.service';
 import { UsersService } from '../../../src/modules/users/users.service';
 
 jest.mock('bcrypt', () => ({
@@ -17,9 +20,19 @@ describe('AuthService', () => {
     signAsync: jest.fn(),
   };
 
+  const configService = {
+    get: jest.fn(),
+    getOrThrow: jest.fn(),
+  };
+
   const usersService = {
     createUser: jest.fn(),
     findByEmailWithPasswordHash: jest.fn(),
+  };
+
+  const refreshTokenService = {
+    create: jest.fn(),
+    revokeAllByUser: jest.fn(),
   };
 
   const user = {
@@ -36,6 +49,8 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
+    configService.get.mockImplementation((_key: string, fallback: string) => fallback);
+    configService.getOrThrow.mockImplementation((key: string) => `${key}-secret`);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -45,8 +60,16 @@ describe('AuthService', () => {
           useValue: usersService,
         },
         {
+          provide: RefreshTokenService,
+          useValue: refreshTokenService,
+        },
+        {
           provide: JwtService,
           useValue: jwtService,
+        },
+        {
+          provide: ConfigService,
+          useValue: configService,
         },
       ],
     }).compile();
@@ -54,9 +77,8 @@ describe('AuthService', () => {
     service = moduleRef.get(AuthService);
   });
 
-  it('registers a customer with a bcrypt password hash and returns a signed token', async () => {
+  it('registers a customer with a bcrypt password hash', async () => {
     jest.mocked(bcrypt.hash).mockResolvedValue('hashed-password' as never);
-    jwtService.signAsync.mockResolvedValue('jwt-token');
     usersService.createUser.mockResolvedValue(user);
 
     const result = await service.register({
@@ -75,12 +97,9 @@ describe('AuthService', () => {
       dateOfBirth: user.dateOfBirth,
       gender: user.gender,
     });
-    expect(jwtService.signAsync).toHaveBeenCalledWith({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
-    expect(result).toEqual({ accessToken: 'jwt-token', user });
+    expect(jwtService.signAsync).not.toHaveBeenCalled();
+    expect(refreshTokenService.create).not.toHaveBeenCalled();
+    expect(result).toEqual(user);
   });
 
   it('rejects login when the email does not exist', async () => {
@@ -88,7 +107,7 @@ describe('AuthService', () => {
 
     await expect(
       service.login({ email: user.email, password: 'Password1' }),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(InvalidCredentialsException);
   });
 
   it('rejects login when the password is invalid', async () => {
@@ -100,7 +119,7 @@ describe('AuthService', () => {
 
     await expect(
       service.login({ email: user.email, password: 'WrongPassword1' }),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(InvalidCredentialsException);
   });
 
   it('logs in with a valid password without returning the password hash', async () => {
@@ -109,11 +128,61 @@ describe('AuthService', () => {
       passwordHash: 'hashed-password',
     });
     jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
-    jwtService.signAsync.mockResolvedValue('jwt-token');
+    jwtService.signAsync.mockResolvedValueOnce('jwt-token').mockResolvedValueOnce('refresh-token');
+    refreshTokenService.create.mockResolvedValue({});
 
     const result = await service.login({ email: user.email, password: 'Password1' });
 
-    expect(result).toEqual({ accessToken: 'jwt-token', user });
-    expect(result.user).not.toHaveProperty('passwordHash');
+    expect(jwtService.signAsync).toHaveBeenCalledWith(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      expect.objectContaining({
+        secret: 'JWT_SECRET-secret',
+      }),
+    );
+    expect(jwtService.signAsync).toHaveBeenCalledWith(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      expect.objectContaining({
+        secret: 'JWT_REFRESH_SECRET-secret',
+      }),
+    );
+    expect(refreshTokenService.create).toHaveBeenCalledWith(
+      user.id,
+      'refresh-token',
+      expect.any(Date),
+    );
+    expect(result).toEqual({ accessToken: 'jwt-token', refreshToken: 'refresh-token' });
+  });
+
+  it('refreshes tokens for an authenticated refresh user', async () => {
+    jwtService.signAsync
+      .mockResolvedValueOnce('next-jwt-token')
+      .mockResolvedValueOnce('next-refresh-token');
+    refreshTokenService.create.mockResolvedValue({});
+
+    const result = await service.refresh(user);
+
+    expect(refreshTokenService.create).toHaveBeenCalledWith(
+      user.id,
+      'next-refresh-token',
+      expect.any(Date),
+    );
+    expect(result).toEqual({
+      accessToken: 'next-jwt-token',
+      refreshToken: 'next-refresh-token',
+    });
+  });
+
+  it('revokes all refresh tokens on logout', async () => {
+    await service.logout(user.id);
+
+    expect(refreshTokenService.revokeAllByUser).toHaveBeenCalledWith(user.id);
   });
 });

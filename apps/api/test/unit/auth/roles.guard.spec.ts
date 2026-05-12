@@ -1,7 +1,8 @@
-import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { UserGender, UserRole } from '@repo/db/prisma/client';
+
+import { AppForbiddenException } from '@/common/exceptions/app.exceptions';
 
 import { RolesGuard } from '../../../src/modules/auth/guards/roles.guard';
 
@@ -62,6 +63,6 @@ describe('RolesGuard', () => {
   it('blocks non-admin users from admin-only routes', () => {
     reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
 
-    expect(() => guard.canActivate(createContext({ user }))).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(createContext({ user }))).toThrow(AppForbiddenException);
   });
 });
