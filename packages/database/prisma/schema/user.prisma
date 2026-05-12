@@ -1,0 +1,15 @@
+model User {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  name         String     @db.VarChar(255)
+  dateOfBirth  DateTime   @map("date_of_birth") @db.Date
+  gender       UserGender
+  role         UserRole   @default(CUSTOMER)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  orders      Order[]
+  lockedSeats Seat[]  @relation("SeatLock")
+
+  @@map("users")
+}

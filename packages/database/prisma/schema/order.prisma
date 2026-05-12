@@ -1,0 +1,32 @@
+model Order {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String      @map("user_id") @db.Uuid
+  eventId    String      @map("event_id") @db.Uuid
+  status     OrderStatus @default(PENDING)
+  totalPrice Decimal     @map("total_price") @db.Decimal(10, 2)
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user    User     @relation(fields: [userId], references: [id])
+  event   Event    @relation(fields: [eventId], references: [id])
+  tickets Ticket[]
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@map("orders")
+}
+
+model Ticket {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId  String   @map("order_id") @db.Uuid
+  seatId   String   @map("seat_id") @db.Uuid
+  qrCode   String   @map("qr_code") @db.Text
+  issuedAt DateTime @default(now()) @map("issued_at") @db.Timestamptz(6)
+
+  order Order @relation(fields: [orderId], references: [id])
+  seat  Seat  @relation(fields: [seatId], references: [id])
+
+  @@unique([seatId])
+  @@index([orderId])
+  @@map("tickets")
+}
