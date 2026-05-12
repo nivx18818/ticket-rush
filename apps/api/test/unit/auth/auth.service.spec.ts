@@ -18,7 +18,7 @@ describe('AuthService', () => {
   };
 
   const usersService = {
-    createCustomer: jest.fn(),
+    createUser: jest.fn(),
     findByEmailWithPasswordHash: jest.fn(),
   };
 
@@ -57,7 +57,7 @@ describe('AuthService', () => {
   it('registers a customer with a bcrypt password hash and returns a signed token', async () => {
     jest.mocked(bcrypt.hash).mockResolvedValue('hashed-password' as never);
     jwtService.signAsync.mockResolvedValue('jwt-token');
-    usersService.createCustomer.mockResolvedValue(user);
+    usersService.createUser.mockResolvedValue(user);
 
     const result = await service.register({
       email: user.email,
@@ -68,7 +68,7 @@ describe('AuthService', () => {
     });
 
     expect(bcrypt.hash).toHaveBeenCalledWith('Password1', 12);
-    expect(usersService.createCustomer).toHaveBeenCalledWith({
+    expect(usersService.createUser).toHaveBeenCalledWith({
       email: user.email,
       passwordHash: 'hashed-password',
       name: user.name,

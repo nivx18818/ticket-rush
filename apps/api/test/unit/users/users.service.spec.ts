@@ -1,6 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { UserGender, UserRole } from '@repo/db/prisma/client';
+import { Prisma, UserGender, UserRole } from '@repo/db/prisma/client';
+
+import { EmailAlreadyExistsException } from '@/common/exceptions/app.exceptions';
 
 import { PrismaService } from '../../../src/modules/prisma/prisma.service';
 import { UsersService } from '../../../src/modules/users/users.service';
@@ -42,11 +44,11 @@ describe('UsersService', () => {
     service = moduleRef.get(UsersService);
   });
 
-  it('creates customer users only', async () => {
+  it('creates customer users by default', async () => {
     prisma.user.create.mockResolvedValue(user);
 
     await expect(
-      service.createCustomer({
+      service.createUser({
         email: user.email,
         passwordHash: 'hashed-password',
         name: user.name,
@@ -66,17 +68,23 @@ describe('UsersService', () => {
   });
 
   it('maps duplicate emails to conflict errors', async () => {
-    prisma.user.create.mockRejectedValue({ code: 'P2002' });
+    prisma.user.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        clientVersion: 'test',
+        code: 'P2002',
+        meta: { target: ['email'] },
+      }),
+    );
 
     await expect(
-      service.createCustomer({
+      service.createUser({
         email: user.email,
         passwordHash: 'hashed-password',
         name: user.name,
         dateOfBirth: user.dateOfBirth,
         gender: user.gender,
       }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).rejects.toBeInstanceOf(EmailAlreadyExistsException);
   });
 
   it('throws when a requested user is missing', async () => {

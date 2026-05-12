@@ -1,8 +1,9 @@
-import type { UserGender } from '@repo/db/prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, UserRole } from '@repo/db/prisma/client';
 
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole } from '@repo/db/prisma/client';
+import { EmailAlreadyExistsException } from '@/common/exceptions/app.exceptions';
 
+import type { CreateUserDto } from './dto/create-user.dto';
 import type { UserProfileDto, UserWithPasswordHashDto } from './dto/users.dto';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -22,34 +23,31 @@ const USER_WITH_PASSWORD_SELECT = {
   passwordHash: true,
 } as const;
 
-const isUniqueConstraintError = (error: unknown) =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  (error as { code?: unknown }).code === 'P2002';
-
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createCustomer(input: {
-    email: string;
-    passwordHash: string;
-    name: string;
-    dateOfBirth: Date;
-    gender: UserGender;
-  }): Promise<UserProfileDto> {
+  async createUser(createUserDto: CreateUserDto): Promise<UserProfileDto> {
+    const { role = UserRole.CUSTOMER, ...userData } = createUserDto;
+
     try {
       return await this.prisma.user.create({
         data: {
-          ...input,
-          role: UserRole.CUSTOMER,
+          ...userData,
+          role,
         },
         select: USER_PROFILE_SELECT,
       });
     } catch (error) {
-      if (isUniqueConstraintError(error)) {
-        throw new ConflictException('Email is already registered.');
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          const target = error.meta?.target as string[] | undefined;
+          const field = target?.[0];
+
+          if (field === 'email') {
+            throw new EmailAlreadyExistsException(createUserDto.email);
+          }
+        }
       }
 
       throw error;
