@@ -3,7 +3,7 @@
 ## TicketRush — Online Ticket Booking Platform
 
 **Course:** INT3306 – Web Application Development, Spring 2026  
-**Team size:** 3  
+**Team size:** 3
 
 ---
 
