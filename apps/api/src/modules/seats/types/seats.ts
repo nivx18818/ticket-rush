@@ -25,4 +25,15 @@ type SeatRecord = {
   };
 };
 
-export type { PriceValue, SeatRecord, ZoneRecord };
+type LockedSeatRecord = {
+  eventId: string;
+  id: string;
+  price: PriceValue | number | string;
+  rowLabel: string;
+  seatNumber: number;
+  status: string;
+  zoneId: string;
+  zoneName: ZoneName;
+};
+
+export type { LockedSeatRecord, PriceValue, SeatRecord, ZoneRecord };
