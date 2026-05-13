@@ -44,6 +44,7 @@ model Seat {
 
   zone     Zone    @relation(fields: [zoneId], references: [id])
   lockedBy User?   @relation("SeatLock", fields: [lockedById], references: [id])
+  orders   OrderSeat[]
   ticket   Ticket?
 
   @@unique([zoneId, rowLabel, seatNumber])
