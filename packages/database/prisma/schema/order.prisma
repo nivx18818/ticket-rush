@@ -8,12 +8,26 @@ model Order {
 
   user    User     @relation(fields: [userId], references: [id])
   event   Event    @relation(fields: [eventId], references: [id])
+  seats   OrderSeat[]
   tickets Ticket[]
 
   @@index([userId])
   @@index([eventId])
   @@index([status])
   @@map("orders")
+}
+
+model OrderSeat {
+  orderId       String  @map("order_id") @db.Uuid
+  seatId        String  @map("seat_id") @db.Uuid
+  priceSnapshot Decimal @map("price_snapshot") @db.Decimal(10, 2)
+
+  order Order @relation(fields: [orderId], references: [id])
+  seat  Seat  @relation(fields: [seatId], references: [id])
+
+  @@id([orderId, seatId])
+  @@index([seatId])
+  @@map("order_seats")
 }
 
 model Ticket {
