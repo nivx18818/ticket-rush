@@ -58,9 +58,9 @@ docs/                — Project documentation (SRS, etc.)
 ### TypeScript
 
 - Keep strict typing and avoid introducing `any` unless unavoidable.
-- Clear type definitions
-- Proper error handling with type guards
-- Zod for runtime type validation
+- Clear type definitions.
+- Proper error handling with type guards.
+- Zod for runtime type validation.
 
 ### Naming Conventions
 
@@ -72,6 +72,7 @@ docs/                — Project documentation (SRS, etc.)
 
 ## Testing instructions
 
+- Run type checks and linting before tests to ensure code quality.
 - Run tests: `pnpm test`
 - Add/update tests for behavior changes; do not ship logic-only changes without test coverage updates.
 - API tests:
