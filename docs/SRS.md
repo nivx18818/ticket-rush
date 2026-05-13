@@ -501,22 +501,22 @@ All endpoints are prefixed `/api/v1`. Authentication is cookie-based — the JWT
 
 ### Events
 
-| Method | Path                | Auth  | Description                                             |
-| ------ | ------------------- | ----- | ------------------------------------------------------- |
-| GET    | /events             | None  | List published events; accepts `?q=` for keyword search |
-| GET    | /events/:id         | None  | Event detail + zone list                                |
-| POST   | /events             | Admin | Create event                                            |
-| PATCH  | /events/:id         | Admin | Update event                                            |
-| PATCH  | /events/:id/publish | Admin | Publish / unpublish                                     |
+| Method | Path                      | Auth  | Description                                             |
+| ------ | ------------------------- | ----- | ------------------------------------------------------- |
+| GET    | /events                   | None  | List published events; accepts `?q=` for keyword search |
+| GET    | /events/:id               | None  | Event detail + zone list                                |
+| POST   | /admin/events             | Admin | Create event                                            |
+| PATCH  | /admin/events/:id         | Admin | Update event                                            |
+| PATCH  | /admin/events/:id/publish | Admin | Publish / unpublish                                     |
 
 ### Zones & Seats
 
-| Method | Path              | Auth     | Description                               |
-| ------ | ----------------- | -------- | ----------------------------------------- |
-| POST   | /events/:id/zones | Admin    | Create zone + generate seats              |
-| GET    | /events/:id/seats | None     | All seats with current status             |
-| POST   | /seats/lock       | Customer | Lock selected seats → starts 10-min timer |
-| POST   | /seats/release    | Customer | Manually release before checkout          |
+| Method | Path                    | Auth     | Description                               |
+| ------ | ----------------------- | -------- | ----------------------------------------- |
+| POST   | /admin/events/:id/zones | Admin    | Create zone + generate seats              |
+| GET    | /events/:id/seats       | None     | All seats with current status             |
+| POST   | /seats/lock             | Customer | Lock selected seats → starts 10-min timer |
+| POST   | /seats/release          | Customer | Manually release before checkout          |
 
 ### Orders
 
@@ -535,10 +535,10 @@ All endpoints are prefixed `/api/v1`. Authentication is cookie-based — the JWT
 
 ### Dashboard (Admin)
 
-| Method | Path                            | Auth  | Description                  |
-| ------ | ------------------------------- | ----- | ---------------------------- |
-| GET    | /dashboard/events/:id           | Admin | Revenue + occupancy snapshot |
-| GET    | /dashboard/events/:id/analytics | Admin | Age + gender breakdown       |
+| Method | Path                                  | Auth  | Description                  |
+| ------ | ------------------------------------- | ----- | ---------------------------- |
+| GET    | /admin/dashboard/events/:id           | Admin | Revenue + occupancy snapshot |
+| GET    | /admin/dashboard/events/:id/analytics | Admin | Age + gender breakdown       |
 
 ### WebSocket Events (Socket.io)
 
