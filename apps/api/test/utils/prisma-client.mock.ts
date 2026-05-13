@@ -19,6 +19,13 @@ export const UserGender = {
 
 export type UserGender = (typeof UserGender)[keyof typeof UserGender];
 
+export const EventStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+export type EventStatus = (typeof EventStatus)[keyof typeof EventStatus];
+
 export const UserRole = {
   ADMIN: 'ADMIN',
   CUSTOMER: 'CUSTOMER',
