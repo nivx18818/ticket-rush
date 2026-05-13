@@ -188,6 +188,15 @@ export class UserNotFoundException extends NotFoundException {
     });
   }
 }
+
+export class EventNotFoundException extends NotFoundException {
+  constructor(identifier: string) {
+    super({
+      code: ErrorCode.EVENT_NOT_FOUND,
+      message: `${getErrorMessage(ErrorCode.EVENT_NOT_FOUND)}: ${identifier}`,
+    });
+  }
+}
 export class AppNotFoundException extends NotFoundException {
   constructor(message?: string) {
     super({
@@ -215,6 +224,15 @@ export class AppConflictException extends ConflictException {
     super({
       code: ErrorCode.CONFLICT,
       message: message || getErrorMessage(ErrorCode.CONFLICT),
+    });
+  }
+}
+
+export class EventNotDraftException extends ConflictException {
+  constructor() {
+    super({
+      code: ErrorCode.EVENT_NOT_DRAFT,
+      message: getErrorMessage(ErrorCode.EVENT_NOT_DRAFT),
     });
   }
 }
@@ -322,10 +340,12 @@ export const ErrorCodeToException = {
   // 404 - Not Found
   [ErrorCode.NOT_FOUND]: AppNotFoundException,
   [ErrorCode.USER_NOT_FOUND]: UserNotFoundException,
+  [ErrorCode.EVENT_NOT_FOUND]: EventNotFoundException,
   // 409 - Conflict
   [ErrorCode.CONFLICT]: AppConflictException,
   [ErrorCode.EMAIL_ALREADY_EXISTS]: EmailAlreadyExistsException,
   [ErrorCode.REFRESH_TOKEN_ALREADY_EXISTS]: RefreshTokenAlreadyExistsException,
+  [ErrorCode.EVENT_NOT_DRAFT]: EventNotDraftException,
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: RateLimitExceededException,
   [ErrorCode.TOO_MANY_REQUESTS]: TooManyRequestsException,

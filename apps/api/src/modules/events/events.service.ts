@@ -3,7 +3,7 @@ import type { Prisma } from '@repo/db/prisma/client';
 import { Injectable } from '@nestjs/common';
 import { EventStatus } from '@repo/db/prisma/client';
 
-import { AppConflictException, AppNotFoundException } from '@/common/exceptions/app.exceptions';
+import { EventNotDraftException, EventNotFoundException } from '@/common/exceptions/app.exceptions';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 
 import type { CreateEventDto } from './dto/create-event.dto';
@@ -76,7 +76,7 @@ export class EventsService {
     });
 
     if (!event) {
-      throw new AppNotFoundException('Event not found');
+      throw new EventNotFoundException(id);
     }
 
     return event;
@@ -129,7 +129,7 @@ export class EventsService {
     });
 
     if (!event) {
-      throw new AppNotFoundException('Event not found');
+      throw new EventNotFoundException(id);
     }
 
     return event;
@@ -137,7 +137,7 @@ export class EventsService {
 
   private assertDraft(event: EventDto): void {
     if (event.status !== EventStatus.DRAFT) {
-      throw new AppConflictException('Only draft events can be updated or deleted');
+      throw new EventNotDraftException();
     }
   }
 }

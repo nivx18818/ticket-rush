@@ -25,10 +25,12 @@ export enum ErrorCode {
   // 404 - Not Found
   NOT_FOUND = 40400,
   USER_NOT_FOUND = 40401,
+  EVENT_NOT_FOUND = 40402,
   // 409 - Conflict
   CONFLICT = 40900,
   EMAIL_ALREADY_EXISTS = 40901,
   REFRESH_TOKEN_ALREADY_EXISTS = 40902,
+  EVENT_NOT_DRAFT = 40903,
   // 429 - Too Many Requests
   RATE_LIMIT_EXCEEDED = 42900,
   TOO_MANY_REQUESTS = 42901,
@@ -60,10 +62,12 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   // 404 - Not Found
   [ErrorCode.NOT_FOUND]: 'Resource not found',
   [ErrorCode.USER_NOT_FOUND]: 'User not found',
+  [ErrorCode.EVENT_NOT_FOUND]: 'Event not found',
   // 409 - Conflict
   [ErrorCode.CONFLICT]: 'Resource conflict',
   [ErrorCode.EMAIL_ALREADY_EXISTS]: 'Email already exists',
   [ErrorCode.REFRESH_TOKEN_ALREADY_EXISTS]: 'Refresh token already exists',
+  [ErrorCode.EVENT_NOT_DRAFT]: 'Only draft events can be updated or deleted',
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: 'Rate limit exceeded',
   [ErrorCode.TOO_MANY_REQUESTS]: 'Too many requests',
