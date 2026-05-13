@@ -7,7 +7,7 @@ export type Context = { prisma: PrismaClient };
 export type MockContext = { prisma: DeepMockProxy<PrismaClient> };
 
 export const createMockContext = (): MockContext => ({
-  prisma: mockDeep<PrismaClient>(),
+  prisma: mockDeep() as unknown as DeepMockProxy<PrismaClient>,
 });
 
 export const resetMockContext = (mockContext: MockContext) => {
