@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
 import { JWT_EXPIRES_IN } from '@/common/constants/auth.constants';
+import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
 
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsersModule } from '../users/users.module';
@@ -48,6 +49,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
     },
   ],
 })
