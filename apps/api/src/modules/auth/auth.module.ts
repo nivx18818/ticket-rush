@@ -1,22 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
 import { JWT_EXPIRES_IN } from '@/common/constants/auth.constants';
-import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
-
-import { PrismaModule } from '../prisma/prisma.module';
-import { UsersModule } from '../users/users.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
-import { RolesGuard } from './guards/roles.guard';
-import { RefreshTokenService } from './refresh-token.service';
-import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { AuthController } from '@/modules/auth/auth.controller';
+import { AuthService } from '@/modules/auth/auth.service';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { JwtRefreshGuard } from '@/modules/auth/guards/jwt-refresh.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { RefreshTokenService } from '@/modules/auth/refresh-token.service';
+import { JwtRefreshStrategy } from '@/modules/auth/strategies/jwt-refresh.strategy';
+import { JwtStrategy } from '@/modules/auth/strategies/jwt.strategy';
+import { PrismaModule } from '@/modules/prisma/prisma.module';
+import { UsersModule } from '@/modules/users/users.module';
 
 @Module({
   imports: [
@@ -40,20 +37,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthService,
     JwtStrategy,
     JwtRefreshStrategy,
+    JwtAuthGuard,
     JwtRefreshGuard,
+    RolesGuard,
     RefreshTokenService,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
-    },
   ],
 })
 export class AuthModule {}

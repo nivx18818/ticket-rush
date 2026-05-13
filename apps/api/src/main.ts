@@ -4,10 +4,12 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 
-import type { CorsOriginMatcher } from './utils/resolve-cors-origin-matchers';
+import type { CorsOriginMatcher } from '@/utils/resolve-cors-origin-matchers';
 
-import { AppModule } from './app.module';
-import { normalizeOrigin, resolveCorsOriginMatchers } from './utils/resolve-cors-origin-matchers';
+import { AppModule } from '@/app.module';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { normalizeOrigin, resolveCorsOriginMatchers } from '@/utils/resolve-cors-origin-matchers';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -21,6 +23,8 @@ async function bootstrap() {
   }
 
   app.use(cookieParser());
+
+  app.useGlobalGuards(app.get(JwtAuthGuard), app.get(RolesGuard));
 
   app.setGlobalPrefix('api/v1');
 
