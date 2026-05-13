@@ -46,6 +46,14 @@ export const SeatStatus = {
 
 export type SeatStatus = (typeof SeatStatus)[keyof typeof SeatStatus];
 
+export const OrderStatus = {
+  CONFIRMED: 'CONFIRMED',
+  EXPIRED: 'EXPIRED',
+  PENDING: 'PENDING',
+} as const;
+
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+
 export const UserRole = {
   ADMIN: 'ADMIN',
   CUSTOMER: 'CUSTOMER',

@@ -4,6 +4,7 @@ import { EventStatus, Prisma, SeatStatus, ZoneName } from '@repo/db/prisma/clien
 import {
   EventNotDraftException,
   EventNotFoundException,
+  SeatNotAvailableException,
   ZoneAlreadyExistsException,
 } from '@/common/exceptions/app.exceptions';
 import { PrismaService } from '@/modules/prisma/prisma.service';
@@ -11,6 +12,7 @@ import { SeatsService } from '@/modules/seats/seats.service';
 
 describe('SeatsService', () => {
   const prisma = {
+    $queryRaw: jest.fn(),
     $transaction: jest.fn(),
     event: {
       findFirst: jest.fn(),
@@ -19,6 +21,7 @@ describe('SeatsService', () => {
     seat: {
       createMany: jest.fn(),
       findMany: jest.fn(),
+      updateMany: jest.fn(),
     },
     zone: {
       create: jest.fn(),
@@ -220,5 +223,101 @@ describe('SeatsService', () => {
 
     await expect(service.listEventSeats(eventId)).rejects.toBeInstanceOf(EventNotFoundException);
     expect(prisma.seat.findMany).not.toHaveBeenCalled();
+  });
+
+  it('locks available seats using a transaction and SELECT FOR UPDATE', async () => {
+    const userId = '9ae59e53-11d2-45c1-a42f-e1eb0f88c22b';
+    const seatId = '3b389a53-5557-4cd3-80db-f42b772a1887';
+
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        eventId,
+        id: seatId,
+        price: { toString: () => '180.5' },
+        rowLabel: 'A',
+        seatNumber: 1,
+        status: 'available',
+        zoneId,
+        zoneName: ZoneName.VIP,
+      },
+    ]);
+    prisma.seat.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(service.lockSeats(userId, [seatId])).resolves.toMatchObject({
+      seats: [
+        {
+          id: seatId,
+          price: 180.5,
+          status: SeatStatus.LOCKED,
+        },
+      ],
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    const [queryStrings] = prisma.$queryRaw.mock.calls[0] as [TemplateStringsArray, string[]];
+    expect(Array.from(queryStrings).join('')).toContain('FOR UPDATE OF s');
+    type UpdateArg = {
+      data: { lockedById: string; status: SeatStatus };
+      where: { id: { in: string[] }; status: SeatStatus };
+    };
+    const updateCalls = prisma.seat.updateMany.mock.calls as [[UpdateArg]];
+    const [[updateArg]] = updateCalls;
+
+    expect(updateArg).toMatchObject({
+      data: {
+        lockedById: userId,
+        status: SeatStatus.LOCKED,
+      },
+      where: {
+        id: { in: [seatId] },
+        status: SeatStatus.AVAILABLE,
+      },
+    });
+  });
+
+  it('rejects lock when a requested seat is unavailable', async () => {
+    const userId = '9ae59e53-11d2-45c1-a42f-e1eb0f88c22b';
+    const seatId = '3b389a53-5557-4cd3-80db-f42b772a1887';
+
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        eventId,
+        id: seatId,
+        price: 180,
+        rowLabel: 'A',
+        seatNumber: 1,
+        status: 'sold',
+        zoneId,
+        zoneName: ZoneName.VIP,
+      },
+    ]);
+
+    await expect(service.lockSeats(userId, [seatId])).rejects.toBeInstanceOf(
+      SeatNotAvailableException,
+    );
+
+    expect(prisma.seat.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('releases only seats locked by the current user', async () => {
+    const userId = '9ae59e53-11d2-45c1-a42f-e1eb0f88c22b';
+    const seatId = '3b389a53-5557-4cd3-80db-f42b772a1887';
+
+    prisma.seat.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(service.releaseSeats(userId, [seatId])).resolves.toEqual({ releasedCount: 1 });
+
+    expect(prisma.seat.updateMany).toHaveBeenCalledWith({
+      data: {
+        lockedById: null,
+        lockedUntil: null,
+        status: SeatStatus.AVAILABLE,
+      },
+      where: {
+        id: { in: [seatId] },
+        lockedById: userId,
+        status: SeatStatus.LOCKED,
+      },
+    });
   });
 });
