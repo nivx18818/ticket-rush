@@ -3,10 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
+import { InvalidTokenException } from '@/common/exceptions/app.exceptions';
+import { UsersService } from '@/modules/users/users.service';
+
 import type { AuthenticatedRequestUser, JwtPayload } from '../type/auth.types';
 
-import { InvalidTokenException } from '../../../common/exceptions/app.exceptions';
-import { UsersService } from '../../users/users.service';
 import { cookieExtractor } from '../utils/cookie-extractor';
 
 @Injectable()

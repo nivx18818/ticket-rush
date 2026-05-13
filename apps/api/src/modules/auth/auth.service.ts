@@ -5,18 +5,19 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
-import type { UserProfileDto } from '../users/dto/users.dto';
-import type { LoginDto } from './dto/login.dto';
-import type { RegisterDto } from './dto/register.dto';
-import type { JwtPayload } from './type/auth.types';
-
 import {
   AUTH_PASSWORD_SALT_ROUNDS,
   JWT_EXPIRES_IN,
   REFRESH_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_EXPIRES_IN_MS,
-} from '../../common/constants/auth.constants';
-import { InvalidCredentialsException } from '../../common/exceptions/app.exceptions';
+} from '@/common/constants/auth.constants';
+import { InvalidCredentialsException } from '@/common/exceptions/app.exceptions';
+
+import type { UserProfileDto } from '../users/dto/users.dto';
+import type { LoginDto } from './dto/login.dto';
+import type { RegisterDto } from './dto/register.dto';
+import type { JwtPayload } from './type/auth.types';
+
 import { UsersService } from '../users/users.service';
 import { RefreshTokenService } from './refresh-token.service';
 
