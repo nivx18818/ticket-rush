@@ -69,11 +69,29 @@ export class MissingRequiredFieldException extends BadRequestException {
   }
 }
 
-export class InvalidFullnameException extends BadRequestException {
+export class InvalidNameException extends BadRequestException {
   constructor() {
     super({
-      code: ErrorCode.INVALID_FULLNAME,
-      message: getErrorMessage(ErrorCode.INVALID_FULLNAME),
+      code: ErrorCode.INVALID_NAME,
+      message: getErrorMessage(ErrorCode.INVALID_NAME),
+    });
+  }
+}
+
+export class InvalidDobException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.INVALID_DOB,
+      message: getErrorMessage(ErrorCode.INVALID_DOB),
+    });
+  }
+}
+
+export class InvalidGenderException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.INVALID_GENDER,
+      message: getErrorMessage(ErrorCode.INVALID_GENDER),
     });
   }
 }
@@ -83,15 +101,6 @@ export class AppBadRequestException extends BadRequestException {
     super({
       code: ErrorCode.BAD_REQUEST,
       message: message || getErrorMessage(ErrorCode.BAD_REQUEST),
-    });
-  }
-}
-
-export class DeadlineInPastException extends BadRequestException {
-  constructor() {
-    super({
-      code: ErrorCode.DEADLINE_IN_PAST,
-      message: getErrorMessage(ErrorCode.DEADLINE_IN_PAST),
     });
   }
 }
@@ -179,48 +188,11 @@ export class UserNotFoundException extends NotFoundException {
     });
   }
 }
-
-export class RoleNotFoundException extends NotFoundException {
-  constructor(identifier: number | string) {
-    super({
-      code: ErrorCode.ROLE_NOT_FOUND,
-      message: `${getErrorMessage(ErrorCode.ROLE_NOT_FOUND)}: ${identifier}`,
-    });
-  }
-}
-
 export class AppNotFoundException extends NotFoundException {
   constructor(message?: string) {
     super({
       code: ErrorCode.NOT_FOUND,
       message: message || getErrorMessage(ErrorCode.NOT_FOUND),
-    });
-  }
-}
-
-export class RoadmapNotFoundException extends NotFoundException {
-  constructor(identifier: number | string) {
-    super({
-      code: ErrorCode.ROADMAP_NOT_FOUND,
-      message: `${getErrorMessage(ErrorCode.ROADMAP_NOT_FOUND)}: ${identifier}`,
-    });
-  }
-}
-
-export class SkillNotFoundException extends NotFoundException {
-  constructor(identifier: number | string) {
-    super({
-      code: ErrorCode.SKILL_NOT_FOUND,
-      message: `${getErrorMessage(ErrorCode.SKILL_NOT_FOUND)}: ${identifier}`,
-    });
-  }
-}
-
-export class ResourceNotFoundException extends NotFoundException {
-  constructor(identifier: number | string) {
-    super({
-      code: ErrorCode.RESOURCE_NOT_FOUND,
-      message: `${getErrorMessage(ErrorCode.RESOURCE_NOT_FOUND)}: ${identifier}`,
     });
   }
 }
@@ -272,19 +244,6 @@ export class RateLimitExceededException extends HttpException {
     );
   }
 }
-
-export class TooManyMessagesException extends HttpException {
-  constructor() {
-    super(
-      {
-        code: ErrorCode.TOO_MANY_MESSAGES,
-        message: getErrorMessage(ErrorCode.TOO_MANY_MESSAGES),
-      },
-      HttpStatus.TOO_MANY_REQUESTS,
-    );
-  }
-}
-
 export class TooManyRequestsException extends HttpException {
   constructor() {
     super(
@@ -341,31 +300,16 @@ export class ExternalServiceErrorException extends HttpException {
   }
 }
 
-// ======================
-// 503 - Service Unavailable
-// ======================
-
-export class RoadmapGenerationUnavailableException extends HttpException {
-  constructor() {
-    super(
-      {
-        code: ErrorCode.ROADMAP_GENERATION_UNAVAILABLE,
-        message: getErrorMessage(ErrorCode.ROADMAP_GENERATION_UNAVAILABLE),
-      },
-      HttpStatus.SERVICE_UNAVAILABLE,
-    );
-  }
-}
-
 export const ErrorCodeToException = {
   // 400 - Bad Request
   [ErrorCode.BAD_REQUEST]: AppBadRequestException,
   [ErrorCode.VALIDATION_ERROR]: ValidationException,
   [ErrorCode.INVALID_EMAIL]: InvalidEmailException,
   [ErrorCode.INVALID_PASSWORD]: InvalidPasswordException,
-  [ErrorCode.INVALID_FULLNAME]: InvalidFullnameException,
+  [ErrorCode.INVALID_NAME]: InvalidNameException,
+  [ErrorCode.INVALID_DOB]: InvalidDobException,
+  [ErrorCode.INVALID_GENDER]: InvalidGenderException,
   [ErrorCode.MISSING_REQUIRED_FIELD]: MissingRequiredFieldException,
-  [ErrorCode.DEADLINE_IN_PAST]: DeadlineInPastException,
   // 401 - Unauthorized
   [ErrorCode.UNAUTHORIZED]: AppUnauthorizedException,
   [ErrorCode.INVALID_ACCESS_TOKEN]: InvalidTokenException,
@@ -378,22 +322,15 @@ export const ErrorCodeToException = {
   // 404 - Not Found
   [ErrorCode.NOT_FOUND]: AppNotFoundException,
   [ErrorCode.USER_NOT_FOUND]: UserNotFoundException,
-  [ErrorCode.ROADMAP_NOT_FOUND]: RoadmapNotFoundException,
-  [ErrorCode.SKILL_NOT_FOUND]: SkillNotFoundException,
-  [ErrorCode.ROLE_NOT_FOUND]: RoleNotFoundException,
-  [ErrorCode.RESOURCE_NOT_FOUND]: ResourceNotFoundException,
   // 409 - Conflict
   [ErrorCode.CONFLICT]: AppConflictException,
   [ErrorCode.EMAIL_ALREADY_EXISTS]: EmailAlreadyExistsException,
   [ErrorCode.REFRESH_TOKEN_ALREADY_EXISTS]: RefreshTokenAlreadyExistsException,
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: RateLimitExceededException,
-  [ErrorCode.TOO_MANY_MESSAGES]: TooManyMessagesException,
   [ErrorCode.TOO_MANY_REQUESTS]: TooManyRequestsException,
   // 500 - Internal Server Error
   [ErrorCode.INTERNAL_SERVER_ERROR]: InternalServerErrorException,
   [ErrorCode.DATABASE_ERROR]: DatabaseErrorException,
   [ErrorCode.EXTERNAL_SERVICE_ERROR]: ExternalServiceErrorException,
-  // 503 - Service Unavailable
-  [ErrorCode.ROADMAP_GENERATION_UNAVAILABLE]: RoadmapGenerationUnavailableException,
 } satisfies Record<ErrorCode, new (...args: any[]) => HttpException>;

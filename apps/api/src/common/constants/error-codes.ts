@@ -9,9 +9,10 @@ export enum ErrorCode {
   VALIDATION_ERROR = 40001,
   INVALID_EMAIL = 40002,
   INVALID_PASSWORD = 40003,
-  INVALID_FULLNAME = 40004,
-  MISSING_REQUIRED_FIELD = 40005,
-  DEADLINE_IN_PAST = 40006,
+  INVALID_NAME = 40004,
+  INVALID_DOB = 40005,
+  INVALID_GENDER = 40006,
+  MISSING_REQUIRED_FIELD = 40007,
   // 401 - Unauthorized
   UNAUTHORIZED = 40100,
   INVALID_ACCESS_TOKEN = 40101,
@@ -24,24 +25,17 @@ export enum ErrorCode {
   // 404 - Not Found
   NOT_FOUND = 40400,
   USER_NOT_FOUND = 40401,
-  ROADMAP_NOT_FOUND = 40402,
-  SKILL_NOT_FOUND = 40403,
-  ROLE_NOT_FOUND = 40404,
-  RESOURCE_NOT_FOUND = 40405,
   // 409 - Conflict
   CONFLICT = 40900,
   EMAIL_ALREADY_EXISTS = 40901,
   REFRESH_TOKEN_ALREADY_EXISTS = 40902,
   // 429 - Too Many Requests
   RATE_LIMIT_EXCEEDED = 42900,
-  TOO_MANY_MESSAGES = 42901,
-  TOO_MANY_REQUESTS = 42902,
+  TOO_MANY_REQUESTS = 42901,
   // 500 - Internal Server Error
   INTERNAL_SERVER_ERROR = 50000,
   DATABASE_ERROR = 50001,
   EXTERNAL_SERVICE_ERROR = 50002,
-  // 503 - Service Unavailable
-  ROADMAP_GENERATION_UNAVAILABLE = 50300,
 }
 
 export const ErrorMessages: Record<ErrorCode, string> = {
@@ -50,13 +44,14 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.VALIDATION_ERROR]: 'Validation failed',
   [ErrorCode.INVALID_EMAIL]: 'Invalid email format',
   [ErrorCode.INVALID_PASSWORD]: 'Invalid password format',
-  [ErrorCode.INVALID_FULLNAME]: 'Invalid username format',
+  [ErrorCode.INVALID_NAME]: 'Invalid name format',
+  [ErrorCode.INVALID_DOB]: 'Invalid date of birth',
+  [ErrorCode.INVALID_GENDER]: 'Invalid gender value',
   [ErrorCode.MISSING_REQUIRED_FIELD]: 'Required field is missing',
-  [ErrorCode.DEADLINE_IN_PAST]: 'deadline_date must be in the future',
   // 401 - Unauthorized
   [ErrorCode.UNAUTHORIZED]: 'Authentication required',
-  [ErrorCode.INVALID_ACCESS_TOKEN]: 'Invalid authentication token',
-  [ErrorCode.ACCESS_TOKEN_EXPIRED]: 'Authentication token has expired',
+  [ErrorCode.INVALID_ACCESS_TOKEN]: 'Invalid access token',
+  [ErrorCode.ACCESS_TOKEN_EXPIRED]: 'Access token expired',
   [ErrorCode.INVALID_REFRESH_TOKEN]: 'Invalid or expired refresh token',
   [ErrorCode.MISSING_AUTHENTICATION]: 'Missing authentication credentials',
   [ErrorCode.INVALID_CREDENTIALS]: 'Invalid credentials',
@@ -65,25 +60,17 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   // 404 - Not Found
   [ErrorCode.NOT_FOUND]: 'Resource not found',
   [ErrorCode.USER_NOT_FOUND]: 'User not found',
-  [ErrorCode.ROADMAP_NOT_FOUND]: 'Roadmap not found',
-  [ErrorCode.SKILL_NOT_FOUND]: 'Skill not found',
-  [ErrorCode.ROLE_NOT_FOUND]: 'Role not found',
-  [ErrorCode.RESOURCE_NOT_FOUND]: 'Learning resource not found',
   // 409 - Conflict
-  [ErrorCode.CONFLICT]: 'The resource is in a conflicting state',
-  [ErrorCode.EMAIL_ALREADY_EXISTS]: 'Email already registered',
+  [ErrorCode.CONFLICT]: 'Resource conflict',
+  [ErrorCode.EMAIL_ALREADY_EXISTS]: 'Email already exists',
   [ErrorCode.REFRESH_TOKEN_ALREADY_EXISTS]: 'Refresh token already exists',
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: 'Rate limit exceeded',
-  [ErrorCode.TOO_MANY_MESSAGES]: 'Too many messages sent',
   [ErrorCode.TOO_MANY_REQUESTS]: 'Too many requests',
   // 500 - Internal Server Error
   [ErrorCode.INTERNAL_SERVER_ERROR]: 'An unexpected error occurred',
   [ErrorCode.DATABASE_ERROR]: 'Database operation failed',
-  [ErrorCode.EXTERNAL_SERVICE_ERROR]: 'External service is unavailable',
-  // 503 - Service Unavailable
-  [ErrorCode.ROADMAP_GENERATION_UNAVAILABLE]:
-    'Roadmap generation is temporarily unavailable. Please try again later and explore default templates while waiting.',
+  [ErrorCode.EXTERNAL_SERVICE_ERROR]: 'External service unavailable',
 };
 
 export function getErrorMessage(code: ErrorCode): string {
