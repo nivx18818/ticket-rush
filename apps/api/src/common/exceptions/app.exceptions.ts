@@ -237,6 +237,15 @@ export class EventNotDraftException extends ConflictException {
   }
 }
 
+export class ZoneAlreadyExistsException extends ConflictException {
+  constructor(eventId: string, zoneName: string) {
+    super({
+      code: ErrorCode.ZONE_ALREADY_EXISTS,
+      message: `${getErrorMessage(ErrorCode.ZONE_ALREADY_EXISTS)}: ${eventId}/${zoneName}`,
+    });
+  }
+}
+
 export class RefreshTokenAlreadyExistsException extends ConflictException {
   constructor() {
     super({
@@ -346,6 +355,7 @@ export const ErrorCodeToException = {
   [ErrorCode.EMAIL_ALREADY_EXISTS]: EmailAlreadyExistsException,
   [ErrorCode.REFRESH_TOKEN_ALREADY_EXISTS]: RefreshTokenAlreadyExistsException,
   [ErrorCode.EVENT_NOT_DRAFT]: EventNotDraftException,
+  [ErrorCode.ZONE_ALREADY_EXISTS]: ZoneAlreadyExistsException,
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: RateLimitExceededException,
   [ErrorCode.TOO_MANY_REQUESTS]: TooManyRequestsException,
