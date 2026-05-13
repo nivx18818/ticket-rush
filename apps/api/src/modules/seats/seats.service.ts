@@ -11,7 +11,7 @@ import { PrismaService } from '@/modules/prisma/prisma.service';
 import type { CreateZoneDto } from './dto/create-zone.dto';
 import type { SeatDto } from './dto/seat.dto';
 import type { ZoneDto } from './dto/zone.dto';
-import type { PriceValue, SeatRecord, ZoneRecord } from './type/seats.types';
+import type { PriceValue, SeatRecord, ZoneRecord } from './types/seats';
 
 import { buildSeatMatrix } from './utils/seat-matrix';
 
