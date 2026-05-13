@@ -56,6 +56,9 @@ const toSelectedUser = (user: DbUser, select: UserSelect) => {
   return profile;
 };
 
+const toHeaderArray = (value: string | string[] | undefined): string[] =>
+  value == null ? [] : typeof value === 'string' ? [value] : value;
+
 describe('Auth flows (e2e)', () => {
   let app: INestApplication<App>;
   let refreshTokens: unknown[];
@@ -164,14 +167,14 @@ describe('Auth flows (e2e)', () => {
       .send({ email: 'user@example.com', password: 'Password1' })
       .expect(200)
       .expect(({ headers }) => {
-        const loginCookie = headers['set-cookie'] as string[];
+        const loginCookie = toHeaderArray(headers['set-cookie']);
         expect(loginCookie[0]).toContain(`${COOKIE_NAMES.ACCESS_TOKEN}=`);
         expect(loginCookie[0]).toContain('HttpOnly');
         expect(loginCookie[1]).toContain(`${COOKIE_NAMES.REFRESH_TOKEN}=`);
         expect(loginCookie[1]).toContain('HttpOnly');
       });
 
-    const loginCookie = loginResponse.headers['set-cookie'] as string[];
+    const loginCookie = toHeaderArray(loginResponse.headers['set-cookie']);
 
     await request(app.getHttpServer())
       .get('/api/v1/auth/me')
@@ -191,21 +194,21 @@ describe('Auth flows (e2e)', () => {
       .set('Cookie', loginCookie)
       .expect(200)
       .expect(({ headers }) => {
-        const refreshCookie = headers['set-cookie'] as string[];
+        const refreshCookie = toHeaderArray(headers['set-cookie']);
         expect(refreshCookie[0]).toContain(`${COOKIE_NAMES.ACCESS_TOKEN}=`);
         expect(refreshCookie[0]).toContain('HttpOnly');
         expect(refreshCookie[1]).toContain(`${COOKIE_NAMES.REFRESH_TOKEN}=`);
         expect(refreshCookie[1]).toContain('HttpOnly');
       });
 
-    const refreshedCookie = refreshResponse.headers['set-cookie'] as string[];
+    const refreshedCookie = toHeaderArray(refreshResponse.headers['set-cookie']);
 
     await request(app.getHttpServer())
       .post('/api/v1/auth/logout')
       .set('Cookie', refreshedCookie)
       .expect(200)
       .expect(({ headers }) => {
-        const logoutCookie = headers['set-cookie'] as string[];
+        const logoutCookie = toHeaderArray(headers['set-cookie']);
         expect(logoutCookie[0]).toContain(`${COOKIE_NAMES.ACCESS_TOKEN}=;`);
       });
   });
@@ -229,7 +232,7 @@ describe('Auth flows (e2e)', () => {
 
     await request(app.getHttpServer())
       .get('/api/v1/admin/users')
-      .set('Cookie', loginResponse.headers['set-cookie'] as string[])
+      .set('Cookie', toHeaderArray(loginResponse.headers['set-cookie']))
       .expect(403);
   });
 });

@@ -32,9 +32,9 @@ type DeleteManyRefreshTokenArgs = {
 
 describe('RefreshTokenService', () => {
   const refreshTokenHashSecret = 'test-refresh-token-hash-secret';
-  const refreshTokenCreate = jest.fn<(args: CreateRefreshTokenArgs) => Promise<unknown>>();
-  const refreshTokenDeleteMany = jest.fn<(args: DeleteManyRefreshTokenArgs) => Promise<unknown>>();
-  const refreshTokenFindFirst = jest.fn<(args: FindValidRefreshTokenArgs) => Promise<unknown>>();
+  const refreshTokenCreate = jest.fn<Promise<unknown>, [CreateRefreshTokenArgs]>();
+  const refreshTokenDeleteMany = jest.fn<Promise<unknown>, [DeleteManyRefreshTokenArgs]>();
+  const refreshTokenFindFirst = jest.fn<Promise<unknown>, [FindValidRefreshTokenArgs]>();
 
   const prisma = {
     refreshToken: {

@@ -1,7 +1,13 @@
 import { Test } from '@nestjs/testing';
 import { UserGender, UserRole } from '@repo/db/prisma/client';
 
-import { COOKIE_NAMES } from '../../../src/common/constants/cookie-config';
+import {
+  ACCESS_TOKEN_COOKIE_OPTIONS,
+  CLEAR_COOKIE_OPTIONS,
+  COOKIE_NAMES,
+  REFRESH_TOKEN_CLEAR_COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
+} from '../../../src/common/constants/cookie-config';
 import { AuthController } from '../../../src/modules/auth/auth.controller';
 import { AuthService } from '../../../src/modules/auth/auth.service';
 import { RefreshTokenService } from '../../../src/modules/auth/refresh-token.service';
@@ -65,22 +71,12 @@ describe('AuthController', () => {
     expect(response.cookie).toHaveBeenCalledWith(
       COOKIE_NAMES.ACCESS_TOKEN,
       'jwt-token',
-      expect.objectContaining({
-        httpOnly: true,
-        path: '/',
-        sameSite: 'strict',
-        secure: false,
-      }),
+      ACCESS_TOKEN_COOKIE_OPTIONS,
     );
     expect(response.cookie).toHaveBeenCalledWith(
       COOKIE_NAMES.REFRESH_TOKEN,
       'refresh-token',
-      expect.objectContaining({
-        httpOnly: true,
-        path: '/api/v1/auth/refresh',
-        sameSite: 'strict',
-        secure: false,
-      }),
+      REFRESH_TOKEN_COOKIE_OPTIONS,
     );
   });
 
@@ -95,19 +91,11 @@ describe('AuthController', () => {
     expect(authService.logout).toHaveBeenCalledWith(user.id);
     expect(response.clearCookie).toHaveBeenCalledWith(
       COOKIE_NAMES.ACCESS_TOKEN,
-      expect.objectContaining({
-        httpOnly: true,
-        path: '/',
-        sameSite: 'strict',
-      }),
+      CLEAR_COOKIE_OPTIONS,
     );
     expect(response.clearCookie).toHaveBeenCalledWith(
       COOKIE_NAMES.REFRESH_TOKEN,
-      expect.objectContaining({
-        httpOnly: true,
-        path: '/api/v1/auth/refresh',
-        sameSite: 'strict',
-      }),
+      REFRESH_TOKEN_CLEAR_COOKIE_OPTIONS,
     );
   });
 
