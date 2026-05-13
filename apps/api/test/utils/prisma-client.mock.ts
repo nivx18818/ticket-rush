@@ -26,6 +26,26 @@ export const EventStatus = {
 
 export type EventStatus = (typeof EventStatus)[keyof typeof EventStatus];
 
+export const ZoneName = {
+  BALCONY_LEFT: 'BALCONY_LEFT',
+  BALCONY_RIGHT: 'BALCONY_RIGHT',
+  STANDING: 'STANDING',
+  VIP: 'VIP',
+  ZONE_A: 'ZONE_A',
+  ZONE_B: 'ZONE_B',
+  ZONE_C: 'ZONE_C',
+} as const;
+
+export type ZoneName = (typeof ZoneName)[keyof typeof ZoneName];
+
+export const SeatStatus = {
+  AVAILABLE: 'AVAILABLE',
+  LOCKED: 'LOCKED',
+  SOLD: 'SOLD',
+} as const;
+
+export type SeatStatus = (typeof SeatStatus)[keyof typeof SeatStatus];
+
 export const UserRole = {
   ADMIN: 'ADMIN',
   CUSTOMER: 'CUSTOMER',
