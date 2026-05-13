@@ -25,10 +25,10 @@ export const buildSeatMatrix = (
 ): GeneratedSeat[] => {
   const seats: GeneratedSeat[] = [];
 
-  for (let rowIndex = 0; rowIndex < rows; rowIndex += 1) {
+  for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
     const rowLabel = toRowLabel(rowIndex);
 
-    for (let seatNumber = 1; seatNumber <= seatsPerRow; seatNumber += 1) {
+    for (let seatNumber = 1; seatNumber <= seatsPerRow; seatNumber++) {
       seats.push({
         rowLabel,
         seatNumber,
