@@ -21,8 +21,13 @@
     "lint": {
       "dependsOn": ["^lint", "^db:generate"]
     },
+    "test": {
+      "dependsOn": ["^test"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": []
+    },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^check-types", "^db:generate"]
     },
     "dev": {
       "dependsOn": ["^db:generate"],
