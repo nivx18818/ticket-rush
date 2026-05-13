@@ -1,18 +1,24 @@
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 
-import { AppModule } from './app.module';
+import type { CorsOriginMatcher } from './utils/resolve-cors-origin-matchers';
 
-function normalizeOrigin(origin: string) {
-  return origin.replace(/\/$/, '');
-}
+import { AppModule } from './app.module';
+import { normalizeOrigin, resolveCorsOriginMatchers } from './utils/resolve-cors-origin-matchers';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  const corsOriginMatchers = resolveCorsOriginMatchers();
+
+  if (corsOriginMatchers.length === 0) {
+    logger.warn('No CLIENT_URL configured. Browser CORS requests will be rejected.');
+  }
 
   app.use(cookieParser());
 
@@ -20,7 +26,26 @@ async function bootstrap() {
 
   app.enableCors({
     credentials: true,
-    origin: normalizeOrigin(configService.getOrThrow<string>('CLIENT_URL')),
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Requests without Origin are typically server-to-server or health checks.
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const normalizedOrigin = normalizeOrigin(origin);
+      const isAllowed = corsOriginMatchers.some((matches: CorsOriginMatcher) =>
+        matches(normalizedOrigin),
+      );
+
+      callback(
+        isAllowed ? null : new Error(`Origin "${origin}" is not allowed by CORS`),
+        isAllowed,
+      );
+    },
   });
 
   app.useGlobalPipes(
