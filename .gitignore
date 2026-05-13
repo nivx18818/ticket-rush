@@ -58,6 +58,10 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Docs
+docs/*
+!docs/SRS.md
+
 # OS
 .DS_Store
 ._*
