@@ -31,6 +31,7 @@ export enum ErrorCode {
   EMAIL_ALREADY_EXISTS = 40901,
   REFRESH_TOKEN_ALREADY_EXISTS = 40902,
   EVENT_NOT_DRAFT = 40903,
+  ZONE_ALREADY_EXISTS = 40904,
   // 429 - Too Many Requests
   RATE_LIMIT_EXCEEDED = 42900,
   TOO_MANY_REQUESTS = 42901,
@@ -68,6 +69,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.EMAIL_ALREADY_EXISTS]: 'Email already exists',
   [ErrorCode.REFRESH_TOKEN_ALREADY_EXISTS]: 'Refresh token already exists',
   [ErrorCode.EVENT_NOT_DRAFT]: 'Only draft events can be updated or deleted',
+  [ErrorCode.ZONE_ALREADY_EXISTS]: 'Zone already exists for event',
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: 'Rate limit exceeded',
   [ErrorCode.TOO_MANY_REQUESTS]: 'Too many requests',

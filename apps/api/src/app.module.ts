@@ -7,6 +7,7 @@ import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { EventsModule } from '@/modules/events/events.module';
 import { PrismaModule } from '@/modules/prisma/prisma.module';
+import { SeatsModule } from '@/modules/seats/seats.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PrismaModule } from '@/modules/prisma/prisma.module';
     PrismaModule,
     AuthModule,
     EventsModule,
+    SeatsModule,
   ],
   controllers: [AppController],
   providers: [
