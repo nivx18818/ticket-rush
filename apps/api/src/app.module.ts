@@ -5,6 +5,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { AppController } from '@/app.controller';
 import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { EventsModule } from '@/modules/events/events.module';
 import { PrismaModule } from '@/modules/prisma/prisma.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { PrismaModule } from '@/modules/prisma/prisma.module';
     }),
     PrismaModule,
     AuthModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [
