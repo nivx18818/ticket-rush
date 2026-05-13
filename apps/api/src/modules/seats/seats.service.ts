@@ -82,7 +82,7 @@ export class SeatsService {
         return this.toZoneDto(zone, seats.length);
       });
     } catch (error) {
-      if (this.isUniqueConstraintError(error)) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ZoneAlreadyExistsException(eventId, dto.name);
       }
 
@@ -114,10 +114,6 @@ export class SeatsService {
     });
 
     return seats.map((seat) => this.toSeatDto(seat));
-  }
-
-  private isUniqueConstraintError(error: unknown): boolean {
-    return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
   }
 
   private toSeatDto(seat: SeatRecord): SeatDto {
