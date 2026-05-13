@@ -197,6 +197,25 @@ export class EventNotFoundException extends NotFoundException {
     });
   }
 }
+
+export class OrderNotFoundException extends NotFoundException {
+  constructor(identifier: string) {
+    super({
+      code: ErrorCode.ORDER_NOT_FOUND,
+      message: `${getErrorMessage(ErrorCode.ORDER_NOT_FOUND)}: ${identifier}`,
+    });
+  }
+}
+
+export class TicketNotFoundException extends NotFoundException {
+  constructor(identifier: string) {
+    super({
+      code: ErrorCode.TICKET_NOT_FOUND,
+      message: `${getErrorMessage(ErrorCode.TICKET_NOT_FOUND)}: ${identifier}`,
+    });
+  }
+}
+
 export class AppNotFoundException extends NotFoundException {
   constructor(message?: string) {
     super({
@@ -242,6 +261,42 @@ export class ZoneAlreadyExistsException extends ConflictException {
     super({
       code: ErrorCode.ZONE_ALREADY_EXISTS,
       message: `${getErrorMessage(ErrorCode.ZONE_ALREADY_EXISTS)}: ${eventId}/${zoneName}`,
+    });
+  }
+}
+
+export class SeatNotAvailableException extends ConflictException {
+  constructor() {
+    super({
+      code: ErrorCode.SEAT_NOT_AVAILABLE,
+      message: getErrorMessage(ErrorCode.SEAT_NOT_AVAILABLE),
+    });
+  }
+}
+
+export class OrderNotPendingException extends ConflictException {
+  constructor() {
+    super({
+      code: ErrorCode.ORDER_NOT_PENDING,
+      message: getErrorMessage(ErrorCode.ORDER_NOT_PENDING),
+    });
+  }
+}
+
+export class OrderExpiredException extends ConflictException {
+  constructor() {
+    super({
+      code: ErrorCode.ORDER_EXPIRED,
+      message: getErrorMessage(ErrorCode.ORDER_EXPIRED),
+    });
+  }
+}
+
+export class OrderSeatsInvalidException extends ConflictException {
+  constructor() {
+    super({
+      code: ErrorCode.ORDER_SEATS_INVALID,
+      message: getErrorMessage(ErrorCode.ORDER_SEATS_INVALID),
     });
   }
 }
@@ -350,12 +405,18 @@ export const ErrorCodeToException = {
   [ErrorCode.NOT_FOUND]: AppNotFoundException,
   [ErrorCode.USER_NOT_FOUND]: UserNotFoundException,
   [ErrorCode.EVENT_NOT_FOUND]: EventNotFoundException,
+  [ErrorCode.ORDER_NOT_FOUND]: OrderNotFoundException,
+  [ErrorCode.TICKET_NOT_FOUND]: TicketNotFoundException,
   // 409 - Conflict
   [ErrorCode.CONFLICT]: AppConflictException,
   [ErrorCode.EMAIL_ALREADY_EXISTS]: EmailAlreadyExistsException,
   [ErrorCode.REFRESH_TOKEN_ALREADY_EXISTS]: RefreshTokenAlreadyExistsException,
   [ErrorCode.EVENT_NOT_DRAFT]: EventNotDraftException,
   [ErrorCode.ZONE_ALREADY_EXISTS]: ZoneAlreadyExistsException,
+  [ErrorCode.SEAT_NOT_AVAILABLE]: SeatNotAvailableException,
+  [ErrorCode.ORDER_NOT_PENDING]: OrderNotPendingException,
+  [ErrorCode.ORDER_EXPIRED]: OrderExpiredException,
+  [ErrorCode.ORDER_SEATS_INVALID]: OrderSeatsInvalidException,
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: RateLimitExceededException,
   [ErrorCode.TOO_MANY_REQUESTS]: TooManyRequestsException,
