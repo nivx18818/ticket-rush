@@ -6,8 +6,10 @@ import { AppController } from '@/app.controller';
 import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { EventsModule } from '@/modules/events/events.module';
+import { OrdersModule } from '@/modules/orders/orders.module';
 import { PrismaModule } from '@/modules/prisma/prisma.module';
 import { SeatsModule } from '@/modules/seats/seats.module';
+import { TicketsModule } from '@/modules/tickets/tickets.module';
 
 @Module({
   imports: [
@@ -18,7 +20,9 @@ import { SeatsModule } from '@/modules/seats/seats.module';
     PrismaModule,
     AuthModule,
     EventsModule,
+    OrdersModule,
     SeatsModule,
+    TicketsModule,
   ],
   controllers: [AppController],
   providers: [
