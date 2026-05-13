@@ -81,36 +81,3 @@ export class AdminEventsController {
     return this.eventsService.unpublish(id);
   }
 }
-
-@Controller('events')
-@Roles(UserRole.ADMIN)
-export class AdminEventMutationsController {
-  constructor(private readonly eventsService: EventsService) {}
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateEventDto): Promise<EventDto> {
-    return this.eventsService.createDraft(dto);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateEventDto): Promise<EventDto> {
-    return this.eventsService.updateDraft(id, dto);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.eventsService.deleteDraft(id);
-  }
-
-  @Patch(':id/publish')
-  publish(@Param('id') id: string): Promise<EventDto> {
-    return this.eventsService.publish(id);
-  }
-
-  @Patch(':id/unpublish')
-  unpublish(@Param('id') id: string): Promise<EventDto> {
-    return this.eventsService.unpublish(id);
-  }
-}
