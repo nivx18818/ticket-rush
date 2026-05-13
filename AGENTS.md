@@ -10,7 +10,7 @@ RMap is a monorepo platform that helps learners map current skills to career goa
 - Install dependencies: `pnpm install`
 - Start all apps in development mode: `pnpm dev`
 - Start API only: `pnpm dev:api`
-- Start Web only: `pnpm --filter web dev`
+- Start Web only: `pnpm dev:web`
 - Build all packages/apps: `pnpm build`
 - Lint all packages/apps: `pnpm lint`
 - Type-check all packages/apps: `pnpm check-types`
@@ -48,6 +48,7 @@ docs/                — Project documentation (SRS, etc.)
 - Follow Prettier config (2 spaces, single quotes, semicolons, trailing commas, 100-char line width, LF).
 - Use ESLint from shared configs in `@repo/eslint-config`; fix warnings/errors before submitting.
 - Keep imports/exports sorted (perfectionist plugin warns on ordering issues, and can be autofixed with ESLint).
+- Always use aliases for imports.
 - Prefer type-only imports where applicable (`@typescript-eslint/consistent-type-imports`).
 - For frontend code, follow Next.js + React Hooks lint rules and Core Web Vitals rules.
 - For backend code, follow NestJS patterns and keep async calls handled (floating promises are warned).
@@ -84,9 +85,9 @@ docs/                — Project documentation (SRS, etc.)
 
 ## Security considerations
 
-- Treat authentication and account flows as sensitive (SRS FR-01): never log credentials, tokens, or secrets.
-- Store passwords only as secure hashes (SRS NFR-05, e.g., bcrypt/argon2) and never persist plaintext passwords.
-- Enforce HTTPS/TLS for client-server communication in all environments where possible (SRS NFR-04).
+- Treat authentication and account flows as sensitive: never log credentials, tokens, or secrets.
+- Store passwords only as secure hashes (e.g., bcrypt/argon2) and never persist plaintext passwords.
+- Enforce HTTPS/TLS for client-server communication in all environments where possible.
 - Validate and sanitize all API inputs; reject malformed payloads early in controllers/DTO validation.
 - Use least-privilege access for database and external services; keep secrets in environment variables, never hardcode.
 - Add security-relevant logs (auth failures, permission denials, abnormal errors) without leaking sensitive data.

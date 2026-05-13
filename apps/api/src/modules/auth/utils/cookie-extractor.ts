@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 
-import { COOKIE_NAMES } from '../../../common/constants/cookie-config';
+import { COOKIE_NAMES } from '@/common/constants/cookie-config';
 
 export const cookieExtractor =
   (name: keyof typeof COOKIE_NAMES) =>

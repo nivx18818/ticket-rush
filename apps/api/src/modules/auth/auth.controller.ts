@@ -12,17 +12,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import type { UserProfileDto } from '../users/dto/users.dto';
-import type { AuthenticatedRequestUser } from './type/auth.types';
-
 import {
   ACCESS_TOKEN_COOKIE_OPTIONS,
   CLEAR_COOKIE_OPTIONS,
   COOKIE_NAMES,
   REFRESH_TOKEN_CLEAR_COOKIE_OPTIONS,
   REFRESH_TOKEN_COOKIE_OPTIONS,
-} from '../../common/constants/cookie-config';
-import { Public } from '../../common/decorators/public.decorator';
+} from '@/common/constants/cookie-config';
+import { Public } from '@/common/decorators/public.decorator';
+
+import type { UserProfileDto } from '../users/dto/users.dto';
+import type { AuthenticatedRequestUser } from './type/auth.types';
+
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { LoginDto } from './dto/login.dto';

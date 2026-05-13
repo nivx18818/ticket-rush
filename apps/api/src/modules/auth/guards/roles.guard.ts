@@ -5,9 +5,10 @@ import type { Request } from 'express';
 import { Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
+import { AppForbiddenException } from '@/common/exceptions/app.exceptions';
+
 import type { AuthenticatedRequestUser } from '../type/auth.types';
 
-import { AppForbiddenException } from '../../../common/exceptions/app.exceptions';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
 type RequestWithUser = Request & {

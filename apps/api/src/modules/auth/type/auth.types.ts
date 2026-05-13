@@ -1,6 +1,6 @@
 import type { UserRole } from '@repo/db/prisma/client';
 
-import type { UserProfileDto } from '../../users/dto/users.dto';
+import type { UserProfileDto } from '@/modules/users/dto/users.dto';
 
 export type JwtPayload = {
   sub: string;

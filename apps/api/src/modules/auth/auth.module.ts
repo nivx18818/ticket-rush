@@ -4,7 +4,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
-import { JWT_EXPIRES_IN } from '../../common/constants/auth.constants';
+import { JWT_EXPIRES_IN } from '@/common/constants/auth.constants';
+
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';

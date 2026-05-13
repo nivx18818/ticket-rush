@@ -7,7 +7,8 @@ import {
   InternalServerErrorException,
   RefreshTokenAlreadyExistsException,
   UserNotFoundException,
-} from '../../common/exceptions/app.exceptions';
+} from '@/common/exceptions/app.exceptions';
+
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
