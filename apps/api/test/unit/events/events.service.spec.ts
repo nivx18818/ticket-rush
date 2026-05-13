@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { EventStatus } from '@repo/db/prisma/client';
 
-import { AppConflictException, AppNotFoundException } from '@/common/exceptions/app.exceptions';
+import { EventNotDraftException, EventNotFoundException } from '@/common/exceptions/app.exceptions';
 import { EventsService } from '@/modules/events/events.service';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 
@@ -91,7 +91,7 @@ describe('EventsService', () => {
     prisma.event.findFirst.mockResolvedValue(null);
 
     await expect(service.getPublishedEvent(draftEvent.id)).rejects.toBeInstanceOf(
-      AppNotFoundException,
+      EventNotFoundException,
     );
 
     expect(prisma.event.findFirst).toHaveBeenCalledWith(
@@ -130,9 +130,9 @@ describe('EventsService', () => {
 
     await expect(
       service.updateDraft(publishedEvent.id, { venue: 'New Venue' }),
-    ).rejects.toBeInstanceOf(AppConflictException);
+    ).rejects.toBeInstanceOf(EventNotDraftException);
     await expect(service.deleteDraft(publishedEvent.id)).rejects.toBeInstanceOf(
-      AppConflictException,
+      EventNotDraftException,
     );
     expect(prisma.event.update).not.toHaveBeenCalled();
     expect(prisma.event.delete).not.toHaveBeenCalled();
@@ -164,6 +164,8 @@ describe('EventsService', () => {
   it('throws when an event is missing', async () => {
     prisma.event.findUnique.mockResolvedValue(null);
 
-    await expect(service.getAdminEvent(draftEvent.id)).rejects.toBeInstanceOf(AppNotFoundException);
+    await expect(service.getAdminEvent(draftEvent.id)).rejects.toBeInstanceOf(
+      EventNotFoundException,
+    );
   });
 });
