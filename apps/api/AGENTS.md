@@ -8,6 +8,10 @@ Extends root AGENTS.md rules.
 - Database access via `@repo/db` (Prisma ORM).
 - Jest for unit tests, Supertest for e2e.
 
+## Coding conventions
+
+- Use custom exceptions for error handling (create missing ones as needed), not generic exceptions or string errors.
+
 ## Module conventions
 
 - One directory per domain module: `src/modules/users/`, `src/modules/roadmaps/`.
