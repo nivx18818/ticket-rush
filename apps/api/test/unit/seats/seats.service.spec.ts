@@ -8,6 +8,7 @@ import {
   ZoneAlreadyExistsException,
 } from '@/common/exceptions/app.exceptions';
 import { PrismaService } from '@/modules/prisma/prisma.service';
+import { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 import { SeatsService } from '@/modules/seats/seats.service';
 
 describe('SeatsService', () => {
@@ -27,6 +28,9 @@ describe('SeatsService', () => {
       create: jest.fn(),
     },
   };
+  const realtimeUpdatesService = {
+    emitSeatLifecycleChanges: jest.fn(),
+  };
 
   const eventId = 'd2a40ead-449c-4b67-bc56-149898ac1127';
   const zoneId = '4dd05fbf-fb23-4fb0-9828-15fe05f3ac14';
@@ -45,6 +49,10 @@ describe('SeatsService', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: RealtimeUpdatesService,
+          useValue: realtimeUpdatesService,
         },
       ],
     }).compile();
@@ -273,6 +281,11 @@ describe('SeatsService', () => {
         status: SeatStatus.AVAILABLE,
       },
     });
+    expect(realtimeUpdatesService.emitSeatLifecycleChanges).toHaveBeenCalledWith(
+      eventId,
+      [{ eventId, seatId }],
+      SeatStatus.LOCKED,
+    );
   });
 
   it('rejects lock when a requested seat is unavailable', async () => {
@@ -303,21 +316,27 @@ describe('SeatsService', () => {
     const userId = '9ae59e53-11d2-45c1-a42f-e1eb0f88c22b';
     const seatId = '3b389a53-5557-4cd3-80db-f42b772a1887';
 
-    prisma.seat.updateMany.mockResolvedValue({ count: 1 });
+    prisma.$queryRaw.mockResolvedValue([{ eventId, seatId }]);
 
     await expect(service.releaseSeats(userId, [seatId])).resolves.toEqual({ releasedCount: 1 });
 
-    expect(prisma.seat.updateMany).toHaveBeenCalledWith({
-      data: {
-        lockedById: null,
-        lockedUntil: null,
-        status: SeatStatus.AVAILABLE,
-      },
-      where: {
-        id: { in: [seatId] },
-        lockedById: userId,
-        status: SeatStatus.LOCKED,
-      },
-    });
+    const [queryStrings] = prisma.$queryRaw.mock.calls[0] as [
+      TemplateStringsArray,
+      string[],
+      string,
+    ];
+    const query = Array.from(queryStrings).join('');
+
+    expect(query).toContain('UPDATE seats AS s');
+    expect(query).toContain("status = 'available'::seat_status");
+    expect(query).toContain('locked_by = NULL');
+    expect(query).toContain('locked_until = NULL');
+    expect(query).toContain("s.status = 'locked'::seat_status");
+    expect(query).toContain('RETURNING');
+    expect(realtimeUpdatesService.emitSeatLifecycleChanges).toHaveBeenCalledWith(
+      eventId,
+      [{ eventId, seatId }],
+      SeatStatus.AVAILABLE,
+    );
   });
 });

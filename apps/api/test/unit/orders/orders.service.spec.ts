@@ -9,6 +9,7 @@ import {
 } from '@/common/exceptions/app.exceptions';
 import { OrdersService } from '@/modules/orders/orders.service';
 import { PrismaService } from '@/modules/prisma/prisma.service';
+import { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 
 describe('OrdersService', () => {
   const prisma = {
@@ -30,6 +31,9 @@ describe('OrdersService', () => {
     ticket: {
       createMany: jest.fn(),
     },
+  };
+  const realtimeUpdatesService = {
+    emitSeatLifecycleChanges: jest.fn(),
   };
 
   const userId = '9ae59e53-11d2-45c1-a42f-e1eb0f88c22b';
@@ -90,6 +94,10 @@ describe('OrdersService', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: RealtimeUpdatesService,
+          useValue: realtimeUpdatesService,
         },
       ],
     }).compile();
@@ -220,6 +228,11 @@ describe('OrdersService', () => {
       seatId,
     });
     expect(ticketData?.qrCode).toMatch(/^data:image\/png;base64,/);
+    expect(realtimeUpdatesService.emitSeatLifecycleChanges).toHaveBeenCalledWith(
+      eventId,
+      [{ eventId, seatId }],
+      SeatStatus.SOLD,
+    );
   });
 
   it('rejects confirm when order is missing or not pending', async () => {

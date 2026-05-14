@@ -2,7 +2,7 @@ import { SeatStatus } from '@repo/db/prisma/client';
 import cron, { type ScheduledTask } from 'node-cron';
 
 import type { PrismaService } from '@/modules/prisma/prisma.service';
-import type { SeatEventsGateway } from '@/modules/realtime/gateways/seat-events.gateway';
+import type { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 
 import { LOCK_EXPIRY_CRON_EXPRESSION, LockExpiryService } from '@/modules/cron/lock-expiry.service';
 
@@ -17,8 +17,8 @@ describe('LockExpiryService', () => {
   const prisma = {
     $queryRaw: jest.fn(),
   };
-  const seatEventsGateway = {
-    emitSeatUpdated: jest.fn(),
+  const realtimeUpdatesService = {
+    emitSeatLifecycleChanges: jest.fn(),
   };
   const task = {
     destroy: jest.fn(),
@@ -41,7 +41,7 @@ describe('LockExpiryService', () => {
 
     service = new LockExpiryService(
       prisma as unknown as PrismaService,
-      seatEventsGateway as unknown as SeatEventsGateway,
+      realtimeUpdatesService as unknown as RealtimeUpdatesService,
     );
   });
 
@@ -92,11 +92,16 @@ describe('LockExpiryService', () => {
     expect(query).toContain('s.locked_until <= NOW()');
     expect(query).toContain('RETURNING');
 
-    expect(seatEventsGateway.emitSeatUpdated).toHaveBeenCalledWith({
+    expect(realtimeUpdatesService.emitSeatLifecycleChanges).toHaveBeenCalledWith(
       eventId,
-      seatId,
-      status: SeatStatus.AVAILABLE,
-    });
+      [
+        {
+          eventId,
+          seatId,
+        },
+      ],
+      SeatStatus.AVAILABLE,
+    );
   });
 
   it('returns zero and emits nothing when no locks are expired', async () => {
@@ -104,6 +109,6 @@ describe('LockExpiryService', () => {
 
     await expect(service.releaseExpiredLocks()).resolves.toBe(0);
 
-    expect(seatEventsGateway.emitSeatUpdated).not.toHaveBeenCalled();
+    expect(realtimeUpdatesService.emitSeatLifecycleChanges).not.toHaveBeenCalled();
   });
 });
