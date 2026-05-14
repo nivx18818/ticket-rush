@@ -45,12 +45,12 @@ export class LockExpiryService implements OnModuleDestroy, OnModuleInit {
 
   async releaseExpiredLocks(): Promise<number> {
     const releasedSeats = await this.prisma.$queryRaw<ReleasedSeatRecord[]>`
-      UPDATE seats AS s
+      UPDATE seats s
       SET
         status = 'available'::seat_status,
         locked_by = NULL,
         locked_until = NULL
-      FROM zones AS z
+      FROM zones z
       WHERE z.id = s.zone_id
         AND s.status = 'locked'::seat_status
         AND s.locked_until <= NOW()
