@@ -8,6 +8,7 @@ import {
   ZoneAlreadyExistsException,
 } from '@/common/exceptions/app.exceptions';
 import { PrismaService } from '@/modules/prisma/prisma.service';
+import { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 
 import type { CreateZoneDto } from './dto/create-zone.dto';
 import type { LockSeatsDto } from './dto/lock-seats.dto';
@@ -48,15 +49,22 @@ const SEAT_LIST_SELECT = {
   },
 } as const satisfies Prisma.SeatSelect;
 
+type LockSeatsResult = LockSeatsDto & {
+  eventId: string;
+};
+
 @Injectable()
 export class SeatsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeUpdatesService: RealtimeUpdatesService,
+  ) {}
 
   async lockSeats(userId: string, seatIds: string[]): Promise<LockSeatsDto> {
     const uniqueSeatIds = this.normalizeSeatIds(seatIds);
     const lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx): Promise<LockSeatsResult> => {
       const seats = await this.lockAvailableSeatRows(tx, uniqueSeatIds);
 
       this.assertLockableSeats(seats, uniqueSeatIds.length);
@@ -74,29 +82,46 @@ export class SeatsService {
       });
 
       return {
+        eventId: seats[0]!.eventId,
         lockedUntil,
         seats: seats.map((seat) => this.toLockedSeatDto(seat)),
       };
     });
+
+    await this.realtimeUpdatesService.emitSeatLifecycleChanges(
+      result.eventId,
+      result.seats.map((seat) => ({ eventId: result.eventId, seatId: seat.id })),
+      SeatStatus.LOCKED,
+    );
+
+    return {
+      lockedUntil: result.lockedUntil,
+      seats: result.seats,
+    };
   }
 
   async releaseSeats(userId: string, seatIds: string[]): Promise<ReleaseSeatsDto> {
     const uniqueSeatIds = this.normalizeSeatIds(seatIds);
 
-    const result = await this.prisma.seat.updateMany({
-      data: {
-        lockedById: null,
-        lockedUntil: null,
-        status: SeatStatus.AVAILABLE,
-      },
-      where: {
-        id: { in: uniqueSeatIds },
-        lockedById: userId,
-        status: SeatStatus.LOCKED,
-      },
-    });
+    const releasedSeats = await this.prisma.$queryRaw<{ eventId: string; seatId: string }[]>`
+      UPDATE seats AS s
+      SET
+        status = 'available'::seat_status,
+        locked_by = NULL,
+        locked_until = NULL
+      FROM zones AS z
+      WHERE z.id = s.zone_id
+        AND s.id = ANY(${uniqueSeatIds}::uuid[])
+        AND s.locked_by = ${userId}::uuid
+        AND s.status = 'locked'::seat_status
+      RETURNING
+        z.event_id::text AS "eventId",
+        s.id::text AS "seatId"
+    `;
 
-    return { releasedCount: result.count };
+    await this.emitSeatChangesByEvent(releasedSeats, SeatStatus.AVAILABLE);
+
+    return { releasedCount: releasedSeats.length };
   }
 
   async createZone(eventId: string, dto: CreateZoneDto): Promise<ZoneDto> {
@@ -219,6 +244,24 @@ export class SeatsService {
 
   private normalizeSeatIds(seatIds: string[]): string[] {
     return [...new Set(seatIds)].sort();
+  }
+
+  private async emitSeatChangesByEvent(
+    changes: { eventId: string; seatId: string }[],
+    status: SeatStatus,
+  ): Promise<void> {
+    const changesByEvent = new Map<string, { eventId: string; seatId: string }[]>();
+
+    for (const change of changes) {
+      const eventChanges = changesByEvent.get(change.eventId) ?? [];
+
+      eventChanges.push(change);
+      changesByEvent.set(change.eventId, eventChanges);
+    }
+
+    for (const [eventId, eventChanges] of changesByEvent) {
+      await this.realtimeUpdatesService.emitSeatLifecycleChanges(eventId, eventChanges, status);
+    }
   }
 
   private toLockedSeatDto(seat: LockedSeatRecord): SeatDto {
