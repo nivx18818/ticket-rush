@@ -1,7 +1,7 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { UserRole } from '@repo/db/prisma/client';
 
-import type { AuthenticatedRequestUser } from '@/modules/auth/type/auth.types';
+import type { AuthenticatedRequestUser } from '@/modules/auth/types/auth';
 
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';

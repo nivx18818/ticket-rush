@@ -3,7 +3,7 @@ import type { Request } from 'express';
 
 import { createParamDecorator } from '@nestjs/common';
 
-import type { AuthenticatedRequestUser } from '../type/auth.types';
+import type { AuthenticatedRequestUser } from '../types/auth';
 
 type AuthenticatedRequest = Request & {
   user?: AuthenticatedRequestUser;

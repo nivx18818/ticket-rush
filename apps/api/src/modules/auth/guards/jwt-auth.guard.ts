@@ -7,7 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator';
 import { MissingAuthenticationException } from '@/common/exceptions/app.exceptions';
 
-import type { AuthenticatedRequestUser } from '../type/auth.types';
+import type { AuthenticatedRequestUser } from '../types/auth';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') implements CanActivate {

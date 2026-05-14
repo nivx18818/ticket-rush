@@ -7,7 +7,7 @@ import { Reflector } from '@nestjs/core';
 
 import { AppForbiddenException } from '@/common/exceptions/app.exceptions';
 
-import type { AuthenticatedRequestUser } from '../type/auth.types';
+import type { AuthenticatedRequestUser } from '../types/auth';
 
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
