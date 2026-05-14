@@ -56,7 +56,6 @@ export class RealtimeUpdatesService {
 
   async emitDashboardUpdated(eventId: string): Promise<void> {
     const payload = await this.getDashboardSnapshot(eventId);
-
     this.seatEventsGateway.emitDashboardUpdated(payload);
   }
 
@@ -75,8 +74,8 @@ export class RealtimeUpdatesService {
         COUNT(s.id) FILTER (WHERE s.status = 'locked'::seat_status) AS "lockedCount",
         COUNT(s.id) FILTER (WHERE s.status = 'sold'::seat_status) AS "soldCount",
         confirmed_revenue.revenue AS "revenue"
-      FROM zones AS z
-      LEFT JOIN seats AS s ON s.zone_id = z.id
+      FROM zones z
+      LEFT JOIN seats s ON s.zone_id = z.id
       CROSS JOIN confirmed_revenue
       WHERE z.event_id = ${eventId}::uuid
       GROUP BY z.id, z.name, confirmed_revenue.revenue
