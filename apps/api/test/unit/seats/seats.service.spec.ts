@@ -327,7 +327,7 @@ describe('SeatsService', () => {
     ];
     const query = Array.from(queryStrings).join('');
 
-    expect(query).toContain('UPDATE seats AS s');
+    expect(query).toContain('UPDATE seats s');
     expect(query).toContain("status = 'available'::seat_status");
     expect(query).toContain('locked_by = NULL');
     expect(query).toContain('locked_until = NULL');
