@@ -104,12 +104,12 @@ export class SeatsService {
     const uniqueSeatIds = this.normalizeSeatIds(seatIds);
 
     const releasedSeats = await this.prisma.$queryRaw<{ eventId: string; seatId: string }[]>`
-      UPDATE seats AS s
+      UPDATE seats s
       SET
         status = 'available'::seat_status,
         locked_by = NULL,
         locked_until = NULL
-      FROM zones AS z
+      FROM zones z
       WHERE z.id = s.zone_id
         AND s.id = ANY(${uniqueSeatIds}::uuid[])
         AND s.locked_by = ${userId}::uuid
