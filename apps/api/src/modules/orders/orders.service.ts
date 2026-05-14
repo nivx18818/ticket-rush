@@ -10,6 +10,7 @@ import {
   OrderSeatsInvalidException,
 } from '@/common/exceptions/app.exceptions';
 import { PrismaService } from '@/modules/prisma/prisma.service';
+import { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 
 import type { OrderDto } from './dto/order.dto';
 import type {
@@ -63,7 +64,10 @@ const ORDER_SELECT = {
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtimeUpdatesService: RealtimeUpdatesService,
+  ) {}
 
   async createOrder(userId: string, seatIds: string[]): Promise<OrderDto> {
     const uniqueSeatIds = this.normalizeSeatIds(seatIds);
@@ -129,7 +133,7 @@ export class OrdersService {
   async confirmOrder(userId: string, orderId: string): Promise<OrderDto> {
     const now = new Date();
 
-    return this.prisma.$transaction(async (tx) => {
+    const confirmedOrder = await this.prisma.$transaction(async (tx) => {
       const order = await this.lockOrderRow(tx, orderId);
 
       if (!order || order.userId !== userId) {
@@ -196,6 +200,17 @@ export class OrdersService {
 
       return this.getOrderInTransaction(tx, userId, orderId);
     });
+
+    await this.realtimeUpdatesService.emitSeatLifecycleChanges(
+      confirmedOrder.eventId,
+      confirmedOrder.seats.map((seat) => ({
+        eventId: confirmedOrder.eventId,
+        seatId: seat.seatId,
+      })),
+      SeatStatus.SOLD,
+    );
+
+    return confirmedOrder;
   }
 
   private assertOrderSeatsValid(

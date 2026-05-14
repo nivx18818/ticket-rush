@@ -3,7 +3,7 @@ import { SeatStatus } from '@repo/db/prisma/client';
 import cron, { type ScheduledTask } from 'node-cron';
 
 import { PrismaService } from '@/modules/prisma/prisma.service';
-import { SeatEventsGateway } from '@/modules/realtime/gateways/seat-events.gateway';
+import { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 
 import type { ReleasedSeatRecord } from './types/lock-expiry';
 
@@ -16,7 +16,7 @@ export class LockExpiryService implements OnModuleDestroy, OnModuleInit {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly seatEventsGateway: SeatEventsGateway,
+    private readonly realtimeUpdatesService: RealtimeUpdatesService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -59,15 +59,28 @@ export class LockExpiryService implements OnModuleDestroy, OnModuleInit {
         s.id::text AS "seatId"
     `;
 
-    for (const seat of releasedSeats) {
-      this.seatEventsGateway.emitSeatUpdated({
-        eventId: seat.eventId,
-        seatId: seat.seatId,
-        status: SeatStatus.AVAILABLE,
-      });
-    }
+    await this.emitReleasedSeatsByEvent(releasedSeats);
 
     return releasedSeats.length;
+  }
+
+  private async emitReleasedSeatsByEvent(releasedSeats: ReleasedSeatRecord[]): Promise<void> {
+    const seatsByEvent = new Map<string, ReleasedSeatRecord[]>();
+
+    for (const releasedSeat of releasedSeats) {
+      const eventSeats = seatsByEvent.get(releasedSeat.eventId) ?? [];
+
+      eventSeats.push(releasedSeat);
+      seatsByEvent.set(releasedSeat.eventId, eventSeats);
+    }
+
+    for (const [eventId, eventSeats] of seatsByEvent) {
+      await this.realtimeUpdatesService.emitSeatLifecycleChanges(
+        eventId,
+        eventSeats,
+        SeatStatus.AVAILABLE,
+      );
+    }
   }
 
   private async handleTick(): Promise<void> {
