@@ -49,7 +49,7 @@ TicketRush is a web application allowing a single event organizer (Admin) to pub
 - Email or SMS notifications
 - Multi-organizer / multi-tenant support
 - Mobile native applications
-- Virtual queue / waiting room — designed and documented (§5.4) but **not implemented in the current sprint**; reserved for future work
+- Virtual queue / waiting room — designed and documented ([§5.5](#55-virtual-queue-advanced--future-implementation)) but **not implemented in the current sprint**; reserved for future work
 
 ---
 
@@ -211,9 +211,9 @@ Seats transition through the following states:
 ```
 Available ──[customer holds]──► Locked ──[customer confirms]──► Sold
                                    │
-                              [10 min timeout]
+                            [10 min timeout]
                                    │
-                                Released (= Available)
+                          Released (= Available)
 ```
 
 **Auto-release implementation:** A `node-cron` job runs every minute on the NestJS server. Each tick executes a single UPDATE query to bulk-release all expired locks:
