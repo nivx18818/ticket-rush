@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 
-import type { SeatUpdatedEventPayload } from './types/seat-events';
+import type { SeatUpdatedEventPayload } from '../types/seat-events';
 
 type EventEmitterServer = {
   emit(event: string, payload: SeatUpdatedEventPayload): void;
