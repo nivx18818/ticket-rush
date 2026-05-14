@@ -9,6 +9,8 @@ import request from 'supertest';
 
 import { AppModule } from '../../src/app.module';
 import { COOKIE_NAMES } from '../../src/common/constants/cookie-config';
+import { JwtAuthGuard } from '../../src/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
 import { PrismaService } from '../../src/modules/prisma/prisma.service';
 
 type DbUser = {
@@ -75,6 +77,7 @@ describe('Auth flows (e2e)', () => {
     users = [];
 
     const prisma = {
+      $queryRaw: jest.fn(() => Promise.resolve([])),
       refreshToken: {
         create: jest.fn((args: { data: unknown }) => {
           const token = {
@@ -125,6 +128,7 @@ describe('Auth flows (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.use(cookieParser());
+    app.useGlobalGuards(app.get(JwtAuthGuard), app.get(RolesGuard));
     app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(
       new ValidationPipe({
