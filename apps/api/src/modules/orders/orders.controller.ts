@@ -6,9 +6,8 @@ import type { AuthenticatedRequestUser } from '@/modules/auth/types/auth';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
 
-import type { OrderDto } from './dto/order.dto';
-
 import { CreateOrderDto } from './dto/create-order.dto';
+import { OrderDto } from './dto/order.dto';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
