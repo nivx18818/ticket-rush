@@ -2,7 +2,7 @@ import { SeatStatus } from '@repo/db/prisma/client';
 import cron, { type ScheduledTask } from 'node-cron';
 
 import type { PrismaService } from '@/modules/prisma/prisma.service';
-import type { SeatEventsGateway } from '@/modules/realtime/seat-events.gateway';
+import type { SeatEventsGateway } from '@/modules/realtime/gateways/seat-events.gateway';
 
 import { LOCK_EXPIRY_CRON_EXPRESSION, LockExpiryService } from '@/modules/cron/lock-expiry.service';
 
