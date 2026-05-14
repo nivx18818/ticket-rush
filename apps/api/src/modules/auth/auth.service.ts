@@ -16,7 +16,7 @@ import { InvalidCredentialsException } from '@/common/exceptions/app.exceptions'
 import type { UserProfileDto } from '../users/dto/users.dto';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
-import type { JwtPayload } from './type/auth.types';
+import type { JwtPayload } from './types/auth';
 
 import { UsersService } from '../users/users.service';
 import { RefreshTokenService } from './refresh-token.service';

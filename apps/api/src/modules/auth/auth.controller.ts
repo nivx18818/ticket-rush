@@ -22,7 +22,7 @@ import {
 import { Public } from '@/common/decorators/public.decorator';
 
 import type { UserProfileDto } from '../users/dto/users.dto';
-import type { AuthenticatedRequestUser } from './type/auth.types';
+import type { AuthenticatedRequestUser } from './types/auth';
 
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';

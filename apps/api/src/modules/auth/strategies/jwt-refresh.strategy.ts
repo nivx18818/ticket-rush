@@ -12,7 +12,7 @@ import {
 } from '@/common/exceptions/app.exceptions';
 import { UsersService } from '@/modules/users/users.service';
 
-import type { AuthenticatedRequestUser, JwtPayload } from '../type/auth.types';
+import type { AuthenticatedRequestUser, JwtPayload } from '../types/auth';
 
 import { RefreshTokenService } from '../refresh-token.service';
 import { cookieExtractor } from '../utils/cookie-extractor';

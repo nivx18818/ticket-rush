@@ -6,7 +6,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { InvalidTokenException } from '@/common/exceptions/app.exceptions';
 import { UsersService } from '@/modules/users/users.service';
 
-import type { AuthenticatedRequestUser, JwtPayload } from '../type/auth.types';
+import type { AuthenticatedRequestUser, JwtPayload } from '../types/auth';
 
 import { cookieExtractor } from '../utils/cookie-extractor';
 
