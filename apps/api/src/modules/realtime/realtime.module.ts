@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { SeatEventsGateway } from './seat-events.gateway';
+import { SeatEventsGateway } from './gateways/seat-events.gateway';
 
 @Module({
   exports: [SeatEventsGateway],
