@@ -54,6 +54,8 @@ docs/                — Project documentation (SRS, etc.)
 - For backend code, follow NestJS patterns and keep async calls handled (floating promises are warned).
 - Keep changes scoped and consistent with existing folder boundaries: `apps/*` for runnable apps, `packages/*` for shared code/config.
 - Use Conventional Commits (configured with `@commitlint/config-conventional`).
+- Refactor code as you go to keep code clean
+- Keep file sizes small and put helper functions and components in their own files.
 
 ### TypeScript
 

@@ -39,6 +39,7 @@ import { MyComponent } from '@/components/my-component'; // local to apps/web
 - Responsive design: mobile-first, container queries where appropriate.
 - Dark mode: use Tailwind's `dark:` variant, never manual media queries in JS.
 - Maintain semantic HTML structure (`<nav>`, `<main>`, `<section>`, etc.).
+- Only use absolute positioning when necessary. Opt for responsive and well structured layouts that use flexbox and grid by default.
 
 ## State management
 
