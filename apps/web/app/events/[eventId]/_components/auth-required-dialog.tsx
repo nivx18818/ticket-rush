@@ -15,10 +15,15 @@ type AuthRequiredDialogProps = {
   eventId: string;
   onOpenChangeAction: (open: boolean) => void;
   open: boolean;
+  returnTo?: string;
 };
 
-export function AuthRequiredDialog({ eventId, onOpenChangeAction, open }: AuthRequiredDialogProps) {
-  const returnTo = `/events/${eventId}`;
+export function AuthRequiredDialog({
+  eventId,
+  onOpenChangeAction,
+  open,
+  returnTo = `/events/${eventId}`,
+}: AuthRequiredDialogProps) {
   const loginHref = `/login?${new URLSearchParams({ returnTo }).toString()}`;
   const registerHref = `/register?${new URLSearchParams({ returnTo }).toString()}`;
 
@@ -26,7 +31,7 @@ export function AuthRequiredDialog({ eventId, onOpenChangeAction, open }: AuthRe
     <Dialog open={open} onOpenChange={onOpenChangeAction}>
       <DialogContent className="rounded-[14px]">
         <DialogHeader>
-          <DialogTitle>Log in to select seats</DialogTitle>
+          <DialogTitle>Log in to continue</DialogTitle>
           <DialogDescription>
             Your seats are attached to your account so checkout can hold them safely.
           </DialogDescription>

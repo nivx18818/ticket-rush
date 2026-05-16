@@ -1,4 +1,5 @@
 import { serverApi } from '@/lib/api/server';
+import { getCurrentUserOrNull } from '@/lib/auth';
 
 import { EventGrid } from './_components/event-grid';
 import { SiteFooter } from './_components/site-footer';
@@ -12,11 +13,14 @@ type HomePageProps = {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const query = normalizeSearchQuery((await searchParams).q);
-  const events = await serverApi.listEvents(query ? { q: query } : undefined);
+  const [events, currentUser] = await Promise.all([
+    serverApi.listEvents(query ? { q: query } : undefined),
+    getCurrentUserOrNull(),
+  ]);
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <SiteHeader query={query} />
+      <SiteHeader currentUser={currentUser} query={query} />
       <main>
         <EventGrid events={events} query={query} />
       </main>

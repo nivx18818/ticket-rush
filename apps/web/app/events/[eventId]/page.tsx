@@ -8,6 +8,7 @@ import type { Event, Seat } from '@/lib/api';
 
 import { ApiError } from '@/lib/api';
 import { serverApi } from '@/lib/api/server';
+import { getCurrentUserOrNull } from '@/lib/auth';
 
 import { SiteFooter } from '../../_components/site-footer';
 import { SiteHeader } from '../../_components/site-header';
@@ -37,7 +38,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <SiteHeader query="" />
+      <SiteHeader currentUser={currentUser} query="" />
       <main className="mx-auto w-full max-w-270 px-4 pb-20 sm:px-6 lg:px-10">
         <Link
           className="hover:bg-muted mt-6 inline-flex h-10 items-center rounded-full px-3 text-sm leading-5 font-medium"
@@ -120,25 +121,6 @@ async function getEventPageData(eventId: string): Promise<{
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound();
-    }
-
-    throw error;
-  }
-}
-
-async function getCurrentUserOrNull(): Promise<CurrentUserSummary> {
-  try {
-    const { user } = await serverApi.getMe();
-
-    return {
-      email: user.email,
-      id: user.id,
-      name: user.name,
-      role: user.role,
-    };
-  } catch (error) {
-    if (error instanceof ApiError && [401, 403].includes(error.status)) {
-      return null;
     }
 
     throw error;

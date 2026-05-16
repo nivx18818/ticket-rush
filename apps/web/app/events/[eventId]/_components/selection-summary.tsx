@@ -147,6 +147,7 @@ export function SelectionSummary({
             <button
               className={cn(buttonVariants({ className: 'w-full' }))}
               type="button"
+              disabled={!hasSelectedSeats}
               onClick={onRequireLoginAction}
             >
               Proceed to checkout
@@ -159,7 +160,7 @@ export function SelectionSummary({
             </p>
           ) : (
             <p className="text-muted-foreground text-center text-xs leading-4">
-              Sign in before selecting seats or checking out.
+              Sign in to hold selected seats at checkout.
             </p>
           )}
         </div>
