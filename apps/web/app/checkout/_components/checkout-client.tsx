@@ -10,8 +10,6 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@repo/design-system/components/ui/button';
-import { Input } from '@repo/design-system/components/ui/input';
-import { cn } from '@repo/design-system/lib/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -19,9 +17,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Order, Seat, SeatUpdatedEvent } from '@/lib/api';
 
 import { useSeatUpdates } from '@/hooks/use-seat-updates';
-import { ApiError } from '@/lib/api';
 import { clientApi } from '@/lib/api/client';
 import { formatEventDate, formatPrice, formatSeatLabel } from '@/lib/format';
+
+import { useRemainingSeconds } from '../_hooks/use-remaining-seconds';
+import {
+  buildSelectionIssueMessage,
+  resolveErrorMessage,
+  type CheckoutStatus,
+} from '../_utils/checkout-helpers';
+import { PaymentField } from './payment-field';
+import { StatusBanner } from './status-banner';
 
 type CheckoutClientProps = {
   currentUserName: string;
@@ -35,15 +41,6 @@ type CheckoutClientProps = {
   missingSeatCount: number;
   selectedSeats: Seat[];
 };
-
-type CheckoutStatus =
-  | 'canceling'
-  | 'confirming'
-  | 'creating-order'
-  | 'error'
-  | 'expired'
-  | 'locking'
-  | 'ready';
 
 export function CheckoutClient({
   currentUserName,
@@ -125,11 +122,6 @@ export function CheckoutClient({
         setConflictMessage(
           'One of your selected seats was sold. Return to the event page to choose another seat.',
         );
-        return;
-      }
-
-      if (payload.status === 'LOCKED' && !lockedSeatIdsRef.current.has(payload.seatId)) {
-        setConflictMessage('One of your selected seats is now held by another customer.');
         return;
       }
 
@@ -238,11 +230,17 @@ export function CheckoutClient({
         />
       </div>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_19.25rem] lg:items-start">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <div className="flex min-w-0 flex-col gap-12">
-          <section aria-labelledby="payment-heading">
-            <h2 id="payment-heading" className="text-foreground text-[21px] leading-8 font-bold">
-              Pay with
+          <section
+            className="border-border rounded-[14px] border p-5 sm:p-6"
+            aria-labelledby="payment-heading"
+          >
+            <h2
+              id="payment-heading"
+              className="text-foreground text-[21px] leading-8 font-semibold"
+            >
+              Payment method
             </h2>
 
             <div className="border-foreground mt-4 flex min-h-14 items-center justify-between gap-4 rounded-lg border px-4">
@@ -264,7 +262,7 @@ export function CheckoutClient({
           <section aria-labelledby="cancellation-heading">
             <h2
               id="cancellation-heading"
-              className="text-foreground text-[21px] leading-8 font-bold"
+              className="text-foreground text-[21px] leading-8 font-semibold"
             >
               Cancellation policy
             </h2>
@@ -275,14 +273,20 @@ export function CheckoutClient({
           </section>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button type="button" disabled={!canConfirm || isBusy} onClick={handleConfirm}>
+            <Button
+              className="w-full sm:w-auto"
+              type="button"
+              disabled={!canConfirm || isBusy}
+              onClick={handleConfirm}
+            >
               <HugeiconsIcon data-icon="inline-start" icon={Shield01Icon} strokeWidth={2} />
               {checkoutStatus === 'confirming'
                 ? 'Confirming payment'
-                : `Confirm payment - ${formatPrice(total)}`}
+                : `Confirm and pay - ${formatPrice(total)}`}
             </Button>
             <Button
               variant="outline"
+              className="w-full sm:w-auto"
               type="button"
               disabled={checkoutStatus === 'canceling' || checkoutStatus === 'confirming'}
               onClick={handleCancel}
@@ -293,7 +297,7 @@ export function CheckoutClient({
         </div>
 
         <aside className="lg:sticky lg:top-28">
-          <div className="border-border rounded-[14px] border p-6">
+          <div className="border-border rounded-[14px] border p-6 shadow-xs">
             <div className="flex gap-3">
               <div className="bg-muted relative size-24 shrink-0 overflow-hidden rounded-lg">
                 {event.thumbnailUrl ? (
@@ -358,143 +362,4 @@ export function CheckoutClient({
       </div>
     </main>
   );
-}
-
-function PaymentField({ label, value }: { label: string; value: string }) {
-  const id = `checkout-${label.toLowerCase().replace(/\W+/g, '-')}`;
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-muted-foreground text-xs leading-5 font-medium" htmlFor={id}>
-        {label}
-      </label>
-      <Input id={id} readOnly aria-readonly value={value} />
-    </div>
-  );
-}
-
-function StatusBanner({
-  conflictMessage,
-  errorMessage,
-  remainingSeconds,
-  status,
-}: {
-  conflictMessage: string | null;
-  errorMessage: string | null;
-  remainingSeconds: number | null;
-  status: CheckoutStatus;
-}) {
-  const message = conflictMessage ?? errorMessage ?? resolveStatusMessage(status, remainingSeconds);
-  const isPositive = status === 'ready' && !conflictMessage && !errorMessage;
-
-  return (
-    <div
-      className={cn(
-        'mt-5 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm leading-5',
-        isPositive
-          ? 'border-seat-available/30 bg-seat-available/10 text-foreground'
-          : 'border-destructive/20 bg-destructive/5 text-destructive',
-      )}
-      role={isPositive ? 'status' : 'alert'}
-    >
-      <HugeiconsIcon className="mt-0.5 shrink-0" icon={Shield01Icon} strokeWidth={2} />
-      <p>{message}</p>
-    </div>
-  );
-}
-
-function resolveStatusMessage(status: CheckoutStatus, remainingSeconds: number | null): string {
-  if (status === 'locking') {
-    return 'Preparing your seat hold. This usually takes a few seconds.';
-  }
-
-  if (status === 'creating-order') {
-    return 'Your seats are held. Creating your order summary now.';
-  }
-
-  if (status === 'confirming') {
-    return 'Confirming payment and issuing your tickets.';
-  }
-
-  if (status === 'canceling') {
-    return 'Canceling the order and releasing your seats.';
-  }
-
-  if (status === 'expired') {
-    return 'Your seat hold expired. Return to the event page to choose seats again.';
-  }
-
-  return `Your seats are held for ${formatDuration(remainingSeconds)}. Complete payment before time runs out or the seats will be released.`;
-}
-
-function buildSelectionIssueMessage(
-  missingSeatCount: number,
-  unavailableSeatCount: number,
-): string {
-  const messages: string[] = [];
-
-  if (missingSeatCount > 0) {
-    messages.push(
-      `${missingSeatCount} selected seat ${missingSeatCount === 1 ? 'is' : 'are'} missing`,
-    );
-  }
-
-  if (unavailableSeatCount > 0) {
-    messages.push(
-      `${unavailableSeatCount} selected seat ${unavailableSeatCount === 1 ? 'is' : 'are'} no longer available`,
-    );
-  }
-
-  return `${messages.join(' and ')}. Return to the event page to adjust your selection.`;
-}
-
-function formatDuration(totalSeconds: number | null): string {
-  if (totalSeconds === null) {
-    return '10:00';
-  }
-
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, '0');
-  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-
-  return `${minutes}:${seconds}`;
-}
-
-function resolveErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message;
-  }
-
-  return 'Unable to continue checkout right now. Please try again.';
-}
-
-function useRemainingSeconds(lockedUntilIso: string | null): number | null {
-  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(() =>
-    calculateRemainingSeconds(lockedUntilIso),
-  );
-
-  useEffect(() => {
-    setRemainingSeconds(calculateRemainingSeconds(lockedUntilIso));
-
-    if (!lockedUntilIso) {
-      return undefined;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setRemainingSeconds(calculateRemainingSeconds(lockedUntilIso));
-    }, 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, [lockedUntilIso]);
-
-  return remainingSeconds;
-}
-
-function calculateRemainingSeconds(lockedUntilIso: string | null): number | null {
-  if (!lockedUntilIso) {
-    return null;
-  }
-
-  return Math.max(0, Math.ceil((new Date(lockedUntilIso).getTime() - Date.now()) / 1000));
 }

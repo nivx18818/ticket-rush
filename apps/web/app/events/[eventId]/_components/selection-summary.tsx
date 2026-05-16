@@ -44,7 +44,7 @@ export function SelectionSummary({
 
   return (
     <aside className="lg:sticky lg:top-28">
-      <div className="border-border bg-background rounded-[14px] border p-6 shadow-sm">
+      <div className="border-border bg-background rounded-[14px] border p-6 shadow-xs">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-foreground text-xl leading-7 font-semibold">
@@ -59,7 +59,7 @@ export function SelectionSummary({
           </span>
         </div>
 
-        <div className="border-border mt-5 space-y-3 border-t pt-5">
+        <div className="border-border mt-5 flex flex-col gap-3 border-t pt-5">
           <p className="text-foreground line-clamp-2 text-sm leading-5 font-semibold">
             {event.name}
           </p>
@@ -82,7 +82,7 @@ export function SelectionSummary({
           </div>
 
           {hasSelectedSeats ? (
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               {sortedSeats.map((seat) => (
                 <div key={seat.id} className="flex items-start justify-between gap-3 text-sm">
                   <div className="min-w-0">
@@ -111,7 +111,7 @@ export function SelectionSummary({
           )}
         </div>
 
-        <div className="border-border mt-5 space-y-4 border-t pt-5">
+        <div className="border-border mt-5 flex flex-col gap-4 border-t pt-5">
           <div className="flex justify-between gap-4 text-sm leading-5">
             <span className="text-muted-foreground">Subtotal</span>
             <span className="text-foreground font-medium">{formatPrice(total)}</span>
@@ -132,7 +132,7 @@ export function SelectionSummary({
                 href={checkoutHref}
                 aria-label="Proceed to checkout with selected seats"
               >
-                Proceed to checkout
+                Continue to checkout
               </a>
             ) : (
               <button
@@ -140,7 +140,7 @@ export function SelectionSummary({
                 type="button"
                 disabled
               >
-                Proceed to checkout
+                Continue to checkout
               </button>
             )
           ) : (
@@ -150,7 +150,7 @@ export function SelectionSummary({
               disabled={!hasSelectedSeats}
               onClick={onRequireLoginAction}
             >
-              Proceed to checkout
+              Continue to checkout
             </button>
           )}
 

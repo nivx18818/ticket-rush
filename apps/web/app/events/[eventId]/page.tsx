@@ -53,9 +53,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           </h1>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm leading-5">
             <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="text-foreground flex items-center gap-1.5">
+              <span className="bg-accent text-foreground flex items-center gap-1.5 rounded-full px-3 py-1">
                 <HugeiconsIcon className="size-4" icon={Ticket01Icon} strokeWidth={2} />
-                {availableSeatCount} available
+                {availableSeatCount} live seats
               </span>
               <span className="flex items-center gap-1.5">
                 <HugeiconsIcon className="size-4" icon={Location01Icon} strokeWidth={2} />

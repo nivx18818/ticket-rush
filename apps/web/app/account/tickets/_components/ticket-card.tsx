@@ -28,17 +28,17 @@ type TicketCardProps = {
 
 export function TicketCard({ detailsHref, event, ticket }: TicketCardProps) {
   return (
-    <article className="border-border rounded-[14px] border p-6">
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_9.75rem]">
-        <div className="flex min-w-0 gap-4">
-          <div className="bg-muted relative hidden size-30 shrink-0 overflow-hidden rounded-lg sm:block">
+    <article className="border-border bg-background rounded-[14px] border p-4 shadow-xs sm:p-6">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_11rem]">
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row">
+          <div className="bg-muted relative aspect-4/3 w-full shrink-0 overflow-hidden rounded-lg sm:size-30">
             {event.thumbnailUrl ? (
               <Image
                 className="object-cover"
                 src={event.thumbnailUrl}
                 alt={event.name}
                 fill
-                sizes="120px"
+                sizes="(min-width: 640px) 120px, 100vw"
                 unoptimized
               />
             ) : (
@@ -49,13 +49,15 @@ export function TicketCard({ detailsHref, event, ticket }: TicketCardProps) {
           </div>
 
           <div className="min-w-0">
-            <h2 className="text-foreground text-lg leading-7 font-semibold">{event.name}</h2>
+            <h2 className="text-foreground line-clamp-2 text-lg leading-7 font-semibold">
+              {event.name}
+            </h2>
             <p className="text-muted-foreground mt-2 flex items-center gap-2 text-sm leading-5">
-              <HugeiconsIcon icon={Calendar02Icon} strokeWidth={2} />
+              <HugeiconsIcon className="size-4 shrink-0" icon={Calendar02Icon} strokeWidth={2} />
               <span>{formatEventDate(event.eventDateIso)}</span>
             </p>
             <p className="text-muted-foreground mt-2 flex items-center gap-2 text-sm leading-5">
-              <HugeiconsIcon icon={Location01Icon} strokeWidth={2} />
+              <HugeiconsIcon className="size-4 shrink-0" icon={Location01Icon} strokeWidth={2} />
               <span className="line-clamp-1">{event.venue}</span>
             </p>
             <p className="bg-muted text-foreground mt-4 inline-flex rounded-full px-3 py-1 text-xs leading-5 font-semibold">
@@ -64,24 +66,29 @@ export function TicketCard({ detailsHref, event, ticket }: TicketCardProps) {
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-3 md:items-center">
+        <div className="flex flex-col items-center gap-3">
           <Image
             className="rounded-lg border"
             src={ticket.qrCode}
             alt={`QR code for ticket ${ticket.id}`}
-            width={156}
-            height={156}
+            width={176}
+            height={176}
             unoptimized
           />
           <p className="text-muted-foreground text-xs leading-4">ID: {formatShortId(ticket.id)}</p>
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex w-full flex-wrap justify-center gap-2">
             {detailsHref ? (
-              <a className={cn(buttonVariants({ size: 'sm' }))} href={detailsHref}>
+              <a
+                className={cn(buttonVariants({ className: 'w-full sm:w-auto', size: 'sm' }))}
+                href={detailsHref}
+              >
                 View details
               </a>
             ) : null}
             <a
-              className={cn(buttonVariants({ size: 'sm', variant: 'outline' }))}
+              className={cn(
+                buttonVariants({ className: 'w-full sm:w-auto', size: 'sm', variant: 'outline' }),
+              )}
               href={ticket.qrCode}
               download={`ticket-${ticket.id}.png`}
             >

@@ -39,7 +39,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
       <main className="mx-auto w-full max-w-270 px-4 py-10 sm:px-6 lg:px-10">
         {confirmed ? (
           <div
-            className="border-seat-available/30 bg-seat-available/10 mb-8 flex items-start gap-3 rounded-[14px] border px-4 py-4"
+            className="border-seat-available/30 bg-seat-available/10 mb-8 flex items-start gap-3 rounded-[14px] border px-4 py-4 transition-[opacity,transform] duration-200"
             role="status"
           >
             <HugeiconsIcon
@@ -66,7 +66,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
         </header>
 
         {tickets.length === 0 ? (
-          <section className="border-border mt-8 rounded-[14px] border px-6 py-12 text-center">
+          <section className="border-border mt-8 rounded-[14px] border px-6 py-12 text-center shadow-xs">
             <h2 className="text-foreground text-lg leading-7 font-semibold">No tickets yet</h2>
             <p className="text-muted-foreground mx-auto mt-2 max-w-120 text-sm leading-5">
               Book seats for an event and your issued tickets will appear here.

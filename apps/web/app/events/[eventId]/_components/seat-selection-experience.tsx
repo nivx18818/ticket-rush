@@ -94,8 +94,8 @@ export function SeatSelectionExperience({
 
   return (
     <>
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-        <div className="min-w-0 space-y-16">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-14">
           <DetailSection title="About this event">
             <p className="text-muted-foreground text-base leading-7">{event.description}</p>
           </DetailSection>
@@ -112,7 +112,7 @@ export function SeatSelectionExperience({
               <div>
                 <h2
                   id="seat-selection-heading"
-                  className="text-foreground text-[21px] leading-8 font-bold"
+                  className="text-foreground text-[21px] leading-8 font-semibold"
                 >
                   Choose your seats
                 </h2>
@@ -120,13 +120,21 @@ export function SeatSelectionExperience({
                   Up to {MAX_SELECTION} seats per booking. Selected seats continue to checkout.
                 </p>
               </div>
-              <p className="text-muted-foreground text-sm leading-5">
+              <p className="border-border text-muted-foreground inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm leading-5">
+                <span
+                  className={
+                    realtime.isConnected
+                      ? 'bg-seat-available size-2 rounded-full'
+                      : 'bg-zone-vip size-2 rounded-full'
+                  }
+                  aria-hidden="true"
+                />
                 {realtime.isConnected ? 'Live updates on' : 'Live updates connecting'}
               </p>
             </div>
 
             {selectionMessage ? (
-              <p className="border-border bg-muted mb-4 rounded-lg border px-4 py-3 text-sm leading-5">
+              <p className="border-border bg-muted mb-4 rounded-lg border px-4 py-3 text-sm leading-5 transition-[opacity,transform] duration-200">
                 {selectionMessage}
               </p>
             ) : null}
@@ -167,7 +175,7 @@ function DetailSection({ children, title }: { children: React.ReactNode; title: 
     <section aria-labelledby={`${slugify(title)}-heading`}>
       <h2
         id={`${slugify(title)}-heading`}
-        className="text-foreground text-[21px] leading-8 font-bold"
+        className="text-foreground text-[21px] leading-8 font-semibold"
       >
         {title}
       </h2>

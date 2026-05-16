@@ -47,7 +47,7 @@ export function HeaderSearch({ query }: HeaderSearchProps) {
 
   return (
     <form
-      className="border-border bg-background hidden h-12 max-w-120 flex-1 items-center rounded-full border px-2 md:flex"
+      className="border-border bg-background hidden h-12 max-w-120 min-w-0 flex-1 items-center rounded-full border px-2 shadow-xs md:flex"
       role="search"
       onSubmit={handleSubmit}
     >
@@ -62,7 +62,7 @@ export function HeaderSearch({ query }: HeaderSearchProps) {
         onChange={(event) => setValue(event.target.value)}
       />
       <button
-        className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full"
+        className="bg-primary text-primary-foreground hover:bg-primary/90 flex size-8 shrink-0 items-center justify-center rounded-full transition-colors"
         type="submit"
         aria-label="Search"
       >

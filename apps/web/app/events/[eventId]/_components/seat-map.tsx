@@ -57,7 +57,7 @@ export function SeatMap({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-8">
       <div className="text-center">
         <div className="bg-muted text-muted-foreground mx-auto flex h-9 max-w-150 items-center justify-center rounded-full text-[13px] leading-5 font-semibold uppercase">
           Stage
@@ -93,7 +93,7 @@ export function SeatMap({
               </div>
 
               <div className="overflow-x-auto pb-1">
-                <div className="w-max min-w-full space-y-1.5">
+                <div className="flex w-max min-w-full flex-col gap-1.5">
                   {zone.rows.map((row) => (
                     <div key={row.label} className="flex items-center gap-1.5">
                       <span className="text-muted-foreground flex w-5 shrink-0 justify-end pr-1 text-xs leading-4">
@@ -112,7 +112,7 @@ export function SeatMap({
                               className={cn(
                                 'text-primary-foreground focus-visible:ring-ring/40 flex size-7 shrink-0 items-center justify-center rounded-lg text-[10px] leading-none font-semibold transition-transform focus-visible:ring-2 focus-visible:outline-none',
                                 getSeatStatusClassName(seat.status, isSelected),
-                                isSelected && 'scale-105',
+                                isSelected && 'scale-105 shadow-xs',
                                 isDisabled && 'cursor-not-allowed opacity-60',
                                 !isDisabled && 'hover:brightness-95 active:scale-95',
                               )}
