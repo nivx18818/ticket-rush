@@ -75,11 +75,6 @@ export function SeatSelectionExperience({
         return;
       }
 
-      if (!currentUser) {
-        setLoginPromptOpen(true);
-        return;
-      }
-
       if (!isSelected && selectedSeatIds.length >= MAX_SELECTION) {
         setSelectionMessage(`Select up to ${MAX_SELECTION} seats per booking.`);
         return;
@@ -90,7 +85,7 @@ export function SeatSelectionExperience({
         isSelected ? currentIds.filter((id) => id !== seatId) : [...currentIds, seatId],
       );
     },
-    [currentUser, seats, selectedSeatIds],
+    [seats, selectedSeatIds],
   );
 
   const openLoginPrompt = useCallback(() => {
@@ -159,6 +154,7 @@ export function SeatSelectionExperience({
 
       <AuthRequiredDialog
         eventId={event.id}
+        returnTo={checkoutHref}
         open={loginPromptOpen}
         onOpenChangeAction={setLoginPromptOpen}
       />

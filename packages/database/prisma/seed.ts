@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt';
 
 import { PrismaPg } from '@prisma/adapter-pg';
+import { randomUUID } from 'node:crypto';
 import pg from 'pg';
 
 import { PrismaClient } from '../generated/prisma/client';
@@ -14,6 +15,10 @@ const DEFAULT_ADMIN_EMAIL = 'admin@ticketrush.local';
 const DEFAULT_ADMIN_NAME = 'TicketRush Admin';
 const DEFAULT_ADMIN_PASSWORD = 'admin@ticketrush';
 const DEFAULT_ADMIN_DOB = new Date('2000-01-01');
+const DEFAULT_CUSTOMER_EMAIL = 'customer@ticketrush.local';
+const DEFAULT_CUSTOMER_NAME = 'Taylor Rush';
+const DEFAULT_CUSTOMER_PASSWORD = 'Customer123';
+const DEFAULT_CUSTOMER_DOB = new Date('1996-05-16');
 
 type SampleZone = {
   name: ZoneName;
@@ -209,6 +214,30 @@ const ensureAdminUser = async () => {
   });
 };
 
+const ensureCustomerUser = async () => {
+  const email = process.env.SEED_CUSTOMER_EMAIL ?? DEFAULT_CUSTOMER_EMAIL;
+  const name = process.env.SEED_CUSTOMER_NAME ?? DEFAULT_CUSTOMER_NAME;
+  const password = process.env.SEED_CUSTOMER_PASSWORD ?? DEFAULT_CUSTOMER_PASSWORD;
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  return prisma.user.upsert({
+    where: { email },
+    update: {
+      name,
+      passwordHash,
+      role: 'CUSTOMER',
+    },
+    create: {
+      dateOfBirth: DEFAULT_CUSTOMER_DOB,
+      email,
+      gender: 'OTHER',
+      name,
+      passwordHash,
+      role: 'CUSTOMER',
+    },
+  });
+};
+
 const resetCatalogData = async () => {
   await prisma.ticket.deleteMany();
   await prisma.orderSeat.deleteMany();
@@ -256,10 +285,134 @@ const ensureSampleEvents = async () => {
   }
 };
 
+const ensureSampleTicketOrder = async (userId: string) => {
+  const event = await prisma.event.findFirst({
+    orderBy: { eventDate: 'asc' },
+    select: { id: true },
+    where: { status: 'PUBLISHED' },
+  });
+
+  if (!event) {
+    return;
+  }
+
+  const seats = await prisma.seat.findMany({
+    orderBy: [{ zone: { name: 'asc' } }, { rowLabel: 'asc' }, { seatNumber: 'asc' }],
+    select: {
+      id: true,
+      zone: {
+        select: {
+          price: true,
+        },
+      },
+    },
+    take: 2,
+    where: {
+      status: 'AVAILABLE',
+      zone: {
+        eventId: event.id,
+      },
+    },
+  });
+
+  if (seats.length === 0) {
+    return;
+  }
+
+  const totalPrice = seats.reduce((sum, seat) => sum + Number(seat.zone.price.toString()), 0);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.seat.updateMany({
+      data: {
+        lockedById: null,
+        lockedUntil: null,
+        status: 'SOLD',
+      },
+      where: {
+        id: { in: seats.map((seat) => seat.id) },
+      },
+    });
+
+    const order = await tx.order.create({
+      data: {
+        eventId: event.id,
+        status: 'CONFIRMED',
+        totalPrice,
+        userId,
+      },
+      select: { id: true },
+    });
+
+    await tx.orderSeat.createMany({
+      data: seats.map((seat) => ({
+        orderId: order.id,
+        priceSnapshot: Number(seat.zone.price.toString()),
+        seatId: seat.id,
+      })),
+    });
+
+    await tx.ticket.createMany({
+      data: seats.map((seat) => {
+        const ticketId = randomUUID();
+
+        return {
+          id: ticketId,
+          orderId: order.id,
+          qrCode: buildSeedQrDataUrl(ticketId),
+          seatId: seat.id,
+        };
+      }),
+    });
+  });
+};
+
+const buildSeedQrDataUrl = (ticketId: string): string => {
+  const size = 156;
+  const modules = 13;
+  const cellSize = 10;
+  const offset = 13;
+  const rects = [];
+
+  for (let row = 0; row < modules; row += 1) {
+    for (let column = 0; column < modules; column += 1) {
+      if (isQrCellFilled(ticketId, row, column, modules)) {
+        rects.push(
+          `<rect x="${offset + column * cellSize}" y="${offset + row * cellSize}" width="${cellSize}" height="${cellSize}" rx="1" />`,
+        );
+      }
+    }
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="#fff"/><g fill="#222">${rects.join('')}</g></svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
+const isQrCellFilled = (
+  ticketId: string,
+  row: number,
+  column: number,
+  modules: number,
+): boolean => {
+  const inTopLeftFinder = row < 4 && column < 4;
+  const inTopRightFinder = row < 4 && column >= modules - 4;
+  const inBottomLeftFinder = row >= modules - 4 && column < 4;
+
+  if (inTopLeftFinder || inTopRightFinder || inBottomLeftFinder) {
+    return row === 0 || column === 0 || row === 3 || column === 3 || (row === 1 && column === 1);
+  }
+
+  const seed = ticketId.charCodeAt((row + column) % ticketId.length) + row * 17 + column * 31;
+
+  return seed % 3 === 0;
+};
+
 const main = async () => {
+  const customer = await ensureCustomerUser();
   await ensureAdminUser();
   await resetCatalogData();
   await ensureSampleEvents();
+  await ensureSampleTicketOrder(customer.id);
 };
 
 main()
