@@ -43,6 +43,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          NEXT_PUBLIC_API_BASE_URL: 'http://example.com/api/v1'
 
       - name: Test
         run: pnpm test
