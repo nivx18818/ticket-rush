@@ -235,6 +235,38 @@ describe('OrdersService', () => {
     );
   });
 
+  it('cancels a pending order, releases seats, and emits updates', async () => {
+    prisma.$queryRaw
+      .mockResolvedValueOnce([{ eventId, id: orderId, status: 'pending', userId }])
+      .mockResolvedValueOnce([
+        {
+          eventId,
+          seatId,
+        },
+      ]);
+    prisma.orderSeat.findMany.mockResolvedValue([{ seatId }]);
+    prisma.order.update.mockResolvedValue({ id: orderId, status: OrderStatus.EXPIRED });
+    prisma.order.findFirst.mockResolvedValue({
+      ...orderRecord,
+      status: OrderStatus.EXPIRED,
+    });
+
+    await expect(service.cancelOrder(userId, orderId)).resolves.toMatchObject({
+      id: orderId,
+      status: OrderStatus.EXPIRED,
+    });
+
+    expect(prisma.order.update).toHaveBeenCalledWith({
+      data: { status: OrderStatus.EXPIRED },
+      where: { id: orderId },
+    });
+    expect(realtimeUpdatesService.emitSeatLifecycleChanges).toHaveBeenCalledWith(
+      eventId,
+      [{ eventId, seatId }],
+      SeatStatus.AVAILABLE,
+    );
+  });
+
   it('rejects confirm when order is missing or not pending', async () => {
     prisma.$queryRaw.mockResolvedValueOnce([]);
 
@@ -245,6 +277,20 @@ describe('OrdersService', () => {
     prisma.$queryRaw.mockResolvedValueOnce([{ eventId, id: orderId, status: 'confirmed', userId }]);
 
     await expect(service.confirmOrder(userId, orderId)).rejects.toBeInstanceOf(
+      OrderNotPendingException,
+    );
+  });
+
+  it('rejects cancel when order is missing or not pending', async () => {
+    prisma.$queryRaw.mockResolvedValueOnce([]);
+
+    await expect(service.cancelOrder(userId, orderId)).rejects.toBeInstanceOf(
+      OrderNotFoundException,
+    );
+
+    prisma.$queryRaw.mockResolvedValueOnce([{ eventId, id: orderId, status: 'confirmed', userId }]);
+
+    await expect(service.cancelOrder(userId, orderId)).rejects.toBeInstanceOf(
       OrderNotPendingException,
     );
   });

@@ -5,13 +5,13 @@ import cron, { type ScheduledTask } from 'node-cron';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 import { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 
-import type { ReleasedSeatRecord } from './types/lock-expiry';
+import type { ReleasedSeatRecord } from './types/seat-lock-expiry';
 
-export const LOCK_EXPIRY_CRON_EXPRESSION = '*/30 * * * * *';
+export const SEAT_LOCK_EXPIRY_CRON_EXPRESSION = '*/30 * * * * *';
 
 @Injectable()
-export class LockExpiryService implements OnModuleDestroy, OnModuleInit {
-  private readonly logger = new Logger(LockExpiryService.name);
+export class SeatLockExpiryService implements OnModuleDestroy, OnModuleInit {
+  private readonly logger = new Logger(SeatLockExpiryService.name);
   private task?: ScheduledTask;
 
   constructor(
@@ -21,12 +21,12 @@ export class LockExpiryService implements OnModuleDestroy, OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     this.task = cron.createTask(
-      LOCK_EXPIRY_CRON_EXPRESSION,
+      SEAT_LOCK_EXPIRY_CRON_EXPRESSION,
       async () => {
         await this.handleTick();
       },
       {
-        name: 'lock-expiry-release',
+        name: 'seat-lock-expiry-release',
         noOverlap: true,
       },
     );

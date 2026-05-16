@@ -40,4 +40,13 @@ export class OrdersController {
   ): Promise<OrderDto> {
     return this.ordersService.confirmOrder(user.id, id);
   }
+
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  cancel(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+  ): Promise<OrderDto> {
+    return this.ordersService.cancelOrder(user.id, id);
+  }
 }

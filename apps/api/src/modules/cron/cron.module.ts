@@ -3,10 +3,11 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '@/modules/prisma/prisma.module';
 import { RealtimeModule } from '@/modules/realtime/realtime.module';
 
-import { LockExpiryService } from './lock-expiry.service';
+import { OrderExpiryService } from './order-expiry.service';
+import { SeatLockExpiryService } from './seat-lock-expiry.service';
 
 @Module({
   imports: [PrismaModule, RealtimeModule],
-  providers: [LockExpiryService],
+  providers: [SeatLockExpiryService, OrderExpiryService],
 })
 export class CronModule {}
