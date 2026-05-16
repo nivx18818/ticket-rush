@@ -4,7 +4,10 @@ import cron, { type ScheduledTask } from 'node-cron';
 import type { PrismaService } from '@/modules/prisma/prisma.service';
 import type { RealtimeUpdatesService } from '@/modules/realtime/realtime-updates.service';
 
-import { LOCK_EXPIRY_CRON_EXPRESSION, LockExpiryService } from '@/modules/cron/lock-expiry.service';
+import {
+  SEAT_LOCK_EXPIRY_CRON_EXPRESSION,
+  SeatLockExpiryService,
+} from '@/modules/cron/seat-lock-expiry.service';
 
 jest.mock('node-cron', () => ({
   __esModule: true,
@@ -13,7 +16,7 @@ jest.mock('node-cron', () => ({
   },
 }));
 
-describe('LockExpiryService', () => {
+describe('SeatLockExpiryService', () => {
   const prisma = {
     $queryRaw: jest.fn(),
   };
@@ -25,7 +28,7 @@ describe('LockExpiryService', () => {
     execute: jest.fn(),
     getNextRun: jest.fn(),
     getStatus: jest.fn(),
-    id: 'lock-expiry-release',
+    id: 'seat-lock-expiry-release',
     off: jest.fn(),
     on: jest.fn(),
     once: jest.fn(),
@@ -33,13 +36,13 @@ describe('LockExpiryService', () => {
     stop: jest.fn(),
   } satisfies ScheduledTask;
 
-  let service: LockExpiryService;
+  let service: SeatLockExpiryService;
 
   beforeEach(() => {
     jest.resetAllMocks();
     jest.mocked(cron.createTask).mockReturnValue(task);
 
-    service = new LockExpiryService(
+    service = new SeatLockExpiryService(
       prisma as unknown as PrismaService,
       realtimeUpdatesService as unknown as RealtimeUpdatesService,
     );
@@ -49,14 +52,14 @@ describe('LockExpiryService', () => {
     await service.onModuleInit();
 
     expect(cron.createTask).toHaveBeenCalledWith(
-      LOCK_EXPIRY_CRON_EXPRESSION,
+      SEAT_LOCK_EXPIRY_CRON_EXPRESSION,
       expect.any(Function),
       {
-        name: 'lock-expiry-release',
+        name: 'seat-lock-expiry-release',
         noOverlap: true,
       },
     );
-    expect(LOCK_EXPIRY_CRON_EXPRESSION).toBe('*/30 * * * * *');
+    expect(SEAT_LOCK_EXPIRY_CRON_EXPRESSION).toBe('*/30 * * * * *');
     expect(task.start).toHaveBeenCalledTimes(1);
   });
 

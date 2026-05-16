@@ -18,6 +18,7 @@ import type {
   LockedOrderRecord,
   LockedOrderSeatRecord,
   OrderRecord,
+  ReleasedSeatRecord,
 } from './types/orders';
 
 const ORDER_SELECT = {
@@ -128,6 +129,50 @@ export class OrdersService {
     }
 
     return this.toOrderDto(order);
+  }
+
+  async cancelOrder(userId: string, orderId: string): Promise<OrderDto> {
+    const { order, releasedSeats } = await this.prisma.$transaction(async (tx) => {
+      const order = await this.lockOrderRow(tx, orderId);
+
+      if (!order || order.userId !== userId) {
+        throw new OrderNotFoundException(orderId);
+      }
+
+      this.assertPendingOrder(order.status);
+
+      const orderSeats = await tx.orderSeat.findMany({
+        orderBy: { seatId: 'asc' },
+        select: { seatId: true },
+        where: { orderId },
+      });
+
+      if (orderSeats.length === 0) {
+        throw new OrderSeatsInvalidException();
+      }
+
+      const seatIds = orderSeats.map((orderSeat) => orderSeat.seatId).sort();
+      const releasedSeats = await this.releaseOrderSeatLocks(tx, seatIds, userId);
+
+      await tx.order.update({
+        data: { status: OrderStatus.EXPIRED },
+        where: { id: orderId },
+      });
+
+      const updatedOrder = await this.getOrderInTransaction(tx, userId, orderId);
+
+      return { order: updatedOrder, releasedSeats };
+    });
+
+    if (releasedSeats.length > 0) {
+      await this.realtimeUpdatesService.emitSeatLifecycleChanges(
+        order.eventId,
+        releasedSeats,
+        SeatStatus.AVAILABLE,
+      );
+    }
+
+    return order;
   }
 
   async confirmOrder(userId: string, orderId: string): Promise<OrderDto> {
@@ -356,6 +401,29 @@ export class OrdersService {
       WHERE id = ANY(${seatIds}::uuid[])
       ORDER BY id
       FOR UPDATE
+    `;
+  }
+
+  private async releaseOrderSeatLocks(
+    tx: Prisma.TransactionClient,
+    seatIds: string[],
+    userId: string,
+  ): Promise<ReleasedSeatRecord[]> {
+    // Prisma Client cannot express UPDATE ... RETURNING, so use raw SQL to emit seat updates.
+    return tx.$queryRaw<ReleasedSeatRecord[]>`
+      UPDATE seats s
+      SET
+        status = 'available'::seat_status,
+        locked_by = NULL,
+        locked_until = NULL
+      FROM zones z
+      WHERE z.id = s.zone_id
+        AND s.id = ANY(${seatIds}::uuid[])
+        AND s.status = 'locked'::seat_status
+        AND s.locked_by = ${userId}::uuid
+      RETURNING
+        z.event_id::text AS "eventId",
+        s.id::text AS "seatId"
     `;
   }
 

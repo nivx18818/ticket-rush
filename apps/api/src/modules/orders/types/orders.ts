@@ -31,6 +31,11 @@ type ConfirmSeatLockRecord = {
   status: string;
 };
 
+type ReleasedSeatRecord = {
+  eventId: string;
+  seatId: string;
+};
+
 type OrderRecord = {
   createdAt: Date;
   eventId: string;
@@ -59,4 +64,10 @@ type OrderRecord = {
   userId: string;
 };
 
-export type { ConfirmSeatLockRecord, LockedOrderRecord, LockedOrderSeatRecord, OrderRecord };
+export type {
+  ConfirmSeatLockRecord,
+  LockedOrderRecord,
+  LockedOrderSeatRecord,
+  OrderRecord,
+  ReleasedSeatRecord,
+};
