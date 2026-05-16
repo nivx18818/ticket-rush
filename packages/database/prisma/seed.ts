@@ -4,7 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 
 import { PrismaClient } from '../generated/prisma/client';
-import type { ZoneName, EventStatus } from '../generated/prisma/enums';
+import type { EventStatus, SeatStatus, ZoneName } from '../generated/prisma/enums';
 
 const pool = new pg.Pool({ connectionString: process.env.DIRECT_URL });
 const adapter = new PrismaPg(pool);
@@ -34,18 +34,21 @@ type SampleEvent = {
 
 const SAMPLE_EVENTS: SampleEvent[] = [
   {
-    name: 'Neon Skyline Fest',
-    description: 'An open-air lineup of synthwave and indie-pop artists.',
-    eventDate: new Date('2026-08-12T19:30:00Z'),
-    venue: 'Skyline Arena, Hanoi',
+    name: 'Aurora Nights - World Tour 2026',
+    description:
+      'An immersive synth-pop experience with state-of-the-art lighting and a 32-piece live band. Doors open at 7:00 PM.',
+    eventDate: new Date('2026-06-14T13:00:00Z'),
+    venue: 'Skyline Arena, Hanoi, Vietnam',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1600&q=80',
     status: 'PUBLISHED' as const,
     zones: [
-      { name: 'VIP', rows: 4, seatsPerRow: 8, price: 180 },
-      { name: 'ZONE_A', rows: 8, seatsPerRow: 14, price: 95 },
-      { name: 'ZONE_B', rows: 8, seatsPerRow: 14, price: 75 },
+      { name: 'VIP', rows: 3, seatsPerRow: 12, price: 220 },
+      { name: 'ZONE_A', rows: 6, seatsPerRow: 14, price: 120 },
+      { name: 'ZONE_B', rows: 8, seatsPerRow: 16, price: 60 },
       { name: 'ZONE_C', rows: 6, seatsPerRow: 12, price: 60 },
+      { name: 'BALCONY_LEFT', rows: 4, seatsPerRow: 8, price: 80 },
+      { name: 'BALCONY_RIGHT', rows: 4, seatsPerRow: 8, price: 80 },
     ],
   },
   {
@@ -136,26 +139,50 @@ const toRowLabel = (index: number): string => {
   return label;
 };
 
-const buildSeats = (zoneId: string, rows: number, seatsPerRow: number) => {
+const buildSeats = (zoneId: string, rows: number, seatsPerRow: number, sampleSeed: number) => {
   const seats = [] as {
-    zoneId: string;
+    lockedUntil: Date | null;
     rowLabel: string;
     seatNumber: number;
+    status: SeatStatus;
+    zoneId: string;
   }[];
 
   for (let rowIndex = 0; rowIndex < rows; rowIndex += 1) {
     const rowLabel = toRowLabel(rowIndex);
 
     for (let seatNumber = 1; seatNumber <= seatsPerRow; seatNumber += 1) {
+      const status = resolveSampleSeatStatus(sampleSeed, rowIndex, seatNumber);
+
       seats.push({
-        zoneId,
+        lockedUntil: status === 'LOCKED' ? new Date(Date.now() + 20 * 60 * 1000) : null,
         rowLabel,
         seatNumber,
+        status,
+        zoneId,
       });
     }
   }
 
   return seats;
+};
+
+const resolveSampleSeatStatus = (
+  sampleSeed: number,
+  rowIndex: number,
+  seatNumber: number,
+): SeatStatus => {
+  const statusSeed = (sampleSeed + rowIndex * 7 + seatNumber * 3) % 23;
+
+  if (statusSeed === 0) {
+    return 'SOLD';
+  }
+
+  if (statusSeed === 1 || statusSeed === 2) {
+    return 'LOCKED';
+  }
+
+  return 'AVAILABLE';
 };
 
 const ensureAdminUser = async () => {
@@ -192,7 +219,7 @@ const resetCatalogData = async () => {
 };
 
 const ensureSampleEvents = async () => {
-  for (const event of SAMPLE_EVENTS) {
+  for (const [eventIndex, event] of SAMPLE_EVENTS.entries()) {
     const eventRecord = await prisma.event.create({
       data: {
         description: event.description,
@@ -204,7 +231,7 @@ const ensureSampleEvents = async () => {
       },
     });
 
-    for (const zone of event.zones) {
+    for (const [zoneIndex, zone] of event.zones.entries()) {
       const zoneRecord = await prisma.zone.create({
         data: {
           eventId: eventRecord.id,
@@ -215,7 +242,12 @@ const ensureSampleEvents = async () => {
         },
       });
 
-      const seatData = buildSeats(zoneRecord.id, zone.rows, zone.seatsPerRow);
+      const seatData = buildSeats(
+        zoneRecord.id,
+        zone.rows,
+        zone.seatsPerRow,
+        eventIndex * 31 + zoneIndex * 11,
+      );
 
       await prisma.seat.createMany({
         data: seatData,
