@@ -50,12 +50,12 @@ export function HeroSearch({ query }: HeroSearchProps) {
       <h1 className="text-foreground text-[28px] leading-[1.2] font-bold tracking-normal">
         Find your next unforgettable night
       </h1>
-      <p className="text-muted-foreground mt-2 text-base">
-        Concerts, festivals, theater, and more - book in seconds.
+      <p className="text-muted-foreground mx-auto mt-2 max-w-150 text-base leading-6">
+        Concerts, festivals, theater, and more - browse seats, hold them, and check out in minutes.
       </p>
 
       <form
-        className="border-border bg-background mx-auto mt-8 hidden h-16 max-w-215 items-center rounded-full border shadow-sm md:flex"
+        className="border-border bg-background mx-auto mt-8 hidden h-16 max-w-215 items-center rounded-full border shadow-xs md:flex"
         role="search"
         onSubmit={handleSubmit}
       >
@@ -90,7 +90,7 @@ export function HeroSearch({ query }: HeroSearchProps) {
         </div>
         <div className="pr-2">
           <button
-            className="bg-primary text-primary-foreground flex h-12 items-center gap-2 rounded-full px-5 text-sm font-medium"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-12 items-center gap-2 rounded-full px-5 text-sm font-medium transition-colors"
             type="submit"
           >
             <HugeiconsIcon className="size-4" icon={Search01Icon} strokeWidth={2} />
@@ -100,7 +100,7 @@ export function HeroSearch({ query }: HeroSearchProps) {
       </form>
 
       <form
-        className="border-border mt-6 flex h-12 items-center gap-2 rounded-full border px-4 md:hidden"
+        className="border-border mt-6 flex h-12 items-center gap-2 rounded-full border pr-2 pl-4 shadow-xs md:hidden"
         role="search"
         onSubmit={handleSubmit}
       >
@@ -119,6 +119,13 @@ export function HeroSearch({ query }: HeroSearchProps) {
           value={value}
           onChange={(event) => setValue(event.target.value)}
         />
+        <button
+          className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full"
+          type="submit"
+          aria-label="Search"
+        >
+          <HugeiconsIcon className="size-4" icon={Search01Icon} strokeWidth={2} />
+        </button>
       </form>
     </section>
   );

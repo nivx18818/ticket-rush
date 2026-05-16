@@ -1,6 +1,7 @@
 import { Calendar02Icon, Location01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 import type { Event } from '@/lib/api/schemas';
 
@@ -13,9 +14,9 @@ export function EventCard({ event, priority = false }: EventCardProps) {
   const eventDate = formatEventDate(event.eventDate);
 
   return (
-    <article className="group">
+    <article className="group rounded-[14px] transition-transform duration-200">
       <div className="bg-muted relative aspect-square overflow-hidden rounded-[14px]">
-        <a
+        <Link
           className="relative block h-full w-full"
           href={`/events/${event.id}`}
           aria-label={`View ${event.name}`}
@@ -29,17 +30,20 @@ export function EventCard({ event, priority = false }: EventCardProps) {
             loading={priority ? 'eager' : 'lazy'}
             unoptimized
           />
-        </a>
+          <span className="bg-background text-foreground absolute top-3 left-3 rounded-full px-3 py-1 text-[11px] leading-4 font-semibold shadow-xs">
+            Live seats
+          </span>
+        </Link>
       </div>
 
-      <div className="space-y-1 pt-3">
+      <div className="flex flex-col gap-1 pt-3">
         <div className="flex items-start justify-between gap-2">
-          <a
+          <Link
             className="text-foreground line-clamp-1 text-base leading-6 font-semibold"
             href={`/events/${event.id}`}
           >
             {event.name}
-          </a>
+          </Link>
         </div>
         <p className="text-muted-foreground flex items-center gap-1.5 text-sm leading-5">
           <HugeiconsIcon className="size-3.5 shrink-0" icon={Location01Icon} strokeWidth={2} />
