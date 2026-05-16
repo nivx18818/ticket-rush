@@ -37,8 +37,9 @@ const SAMPLE_EVENTS: SampleEvent[] = [
     name: 'Neon Skyline Fest',
     description: 'An open-air lineup of synthwave and indie-pop artists.',
     eventDate: new Date('2026-08-12T19:30:00Z'),
-    venue: 'Skyline Arena',
-    thumbnailUrl: 'https://images.example.com/events/neon-skyline.jpg',
+    venue: 'Skyline Arena, Hanoi',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80',
     status: 'PUBLISHED' as const,
     zones: [
       { name: 'VIP', rows: 4, seatsPerRow: 8, price: 180 },
@@ -51,13 +52,72 @@ const SAMPLE_EVENTS: SampleEvent[] = [
     name: 'Pulse City Live',
     description: 'A one-night electronic showcase with immersive visuals.',
     eventDate: new Date('2026-09-05T18:00:00Z'),
-    venue: 'Pulse City Hall',
-    thumbnailUrl: 'https://images.example.com/events/pulse-city.jpg',
+    venue: 'Pulse City Hall, Ho Chi Minh City',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80',
     status: 'PUBLISHED' as const,
     zones: [
       { name: 'STANDING', rows: 14, seatsPerRow: 20, price: 70 },
       { name: 'BALCONY_LEFT', rows: 5, seatsPerRow: 16, price: 50 },
       { name: 'BALCONY_RIGHT', rows: 5, seatsPerRow: 16, price: 50 },
+    ],
+  },
+  {
+    name: 'Harbor Lights Festival',
+    description: 'A waterfront festival with live bands, food stalls, and late-night DJ sets.',
+    eventDate: new Date('2026-10-02T17:30:00Z'),
+    venue: 'Han River Park, Da Nang',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&fit=crop&w=1200&q=80',
+    status: 'PUBLISHED' as const,
+    zones: [
+      { name: 'VIP', rows: 3, seatsPerRow: 10, price: 150 },
+      { name: 'STANDING', rows: 12, seatsPerRow: 18, price: 65 },
+      { name: 'ZONE_A', rows: 6, seatsPerRow: 12, price: 80 },
+    ],
+  },
+  {
+    name: 'Midnight Comedy Room',
+    description: 'A curated stand-up night featuring touring comics and local favorites.',
+    eventDate: new Date('2026-10-18T20:00:00Z'),
+    venue: 'Old Quarter Playhouse, Hanoi',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=1200&q=80',
+    status: 'PUBLISHED' as const,
+    zones: [
+      { name: 'ZONE_A', rows: 7, seatsPerRow: 10, price: 55 },
+      { name: 'ZONE_B', rows: 6, seatsPerRow: 10, price: 40 },
+      { name: 'BALCONY_LEFT', rows: 3, seatsPerRow: 8, price: 35 },
+      { name: 'BALCONY_RIGHT', rows: 3, seatsPerRow: 8, price: 35 },
+    ],
+  },
+  {
+    name: 'Classic Theater Weekend',
+    description: 'A two-act stage production with live orchestra accompaniment.',
+    eventDate: new Date('2026-11-07T19:00:00Z'),
+    venue: 'Imperial Theater, Hue',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=1200&q=80',
+    status: 'PUBLISHED' as const,
+    zones: [
+      { name: 'VIP', rows: 2, seatsPerRow: 12, price: 120 },
+      { name: 'ZONE_A', rows: 8, seatsPerRow: 14, price: 85 },
+      { name: 'ZONE_B', rows: 8, seatsPerRow: 14, price: 65 },
+    ],
+  },
+  {
+    name: 'Arena Sports Night',
+    description: 'A fast-paced indoor sports event with reserved seating across every zone.',
+    eventDate: new Date('2026-11-21T18:30:00Z'),
+    venue: 'Coastal Arena, Nha Trang',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=1200&q=80',
+    status: 'PUBLISHED' as const,
+    zones: [
+      { name: 'VIP', rows: 4, seatsPerRow: 10, price: 130 },
+      { name: 'ZONE_A', rows: 10, seatsPerRow: 16, price: 75 },
+      { name: 'ZONE_B', rows: 10, seatsPerRow: 16, price: 55 },
+      { name: 'ZONE_C', rows: 8, seatsPerRow: 14, price: 40 },
     ],
   },
 ];
@@ -122,61 +182,43 @@ const ensureAdminUser = async () => {
   });
 };
 
+const resetCatalogData = async () => {
+  await prisma.ticket.deleteMany();
+  await prisma.orderSeat.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.seat.deleteMany();
+  await prisma.zone.deleteMany();
+  await prisma.event.deleteMany();
+};
+
 const ensureSampleEvents = async () => {
   for (const event of SAMPLE_EVENTS) {
-    const existingEvent = await prisma.event.findFirst({
-      where: { name: event.name },
+    const eventRecord = await prisma.event.create({
+      data: {
+        description: event.description,
+        eventDate: event.eventDate,
+        name: event.name,
+        status: event.status,
+        thumbnailUrl: event.thumbnailUrl,
+        venue: event.venue,
+      },
     });
 
-    const eventRecord =
-      existingEvent ??
-      (await prisma.event.create({
-        data: {
-          name: event.name,
-          description: event.description,
-          eventDate: event.eventDate,
-          venue: event.venue,
-          thumbnailUrl: event.thumbnailUrl,
-          status: event.status,
-        },
-      }));
-
     for (const zone of event.zones) {
-      const zoneRecord = await prisma.zone.upsert({
-        where: {
-          eventId_name: {
-            eventId: eventRecord.id,
-            name: zone.name,
-          },
-        },
-        update: {
-          rows: zone.rows,
-          seatsPerRow: zone.seatsPerRow,
-          price: zone.price,
-        },
-        create: {
+      const zoneRecord = await prisma.zone.create({
+        data: {
           eventId: eventRecord.id,
           name: zone.name,
+          price: zone.price,
           rows: zone.rows,
           seatsPerRow: zone.seatsPerRow,
-          price: zone.price,
         },
       });
-
-      const expectedSeatCount = zone.rows * zone.seatsPerRow;
-      const existingSeatCount = await prisma.seat.count({
-        where: { zoneId: zoneRecord.id },
-      });
-
-      if (existingSeatCount >= expectedSeatCount) {
-        continue;
-      }
 
       const seatData = buildSeats(zoneRecord.id, zone.rows, zone.seatsPerRow);
 
       await prisma.seat.createMany({
         data: seatData,
-        skipDuplicates: true,
       });
     }
   }
@@ -184,6 +226,7 @@ const ensureSampleEvents = async () => {
 
 const main = async () => {
   await ensureAdminUser();
+  await resetCatalogData();
   await ensureSampleEvents();
 };
 
